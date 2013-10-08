@@ -16,8 +16,11 @@
 
 package org.springframework.web.servlet.config.annotation;
 
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.springframework.mock.web.test.MockHttpServletRequest;
 import org.springframework.mock.web.test.MockHttpServletResponse;
 import org.springframework.mock.web.test.MockServletContext;
@@ -25,6 +28,10 @@ import org.springframework.web.context.support.GenericWebApplicationContext;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
+import org.springframework.web.servlet.resource.ResourceResolver;
+import org.springframework.web.servlet.resource.ResourceTransformer;
+
+import static org.junit.Assert.*;
 
 import static org.junit.Assert.*;
 
@@ -81,6 +88,29 @@ public class ResourceHandlerRegistryTests {
 
 		registry.setOrder(0);
 		assertEquals(0, registry.getHandlerMapping().getOrder());
+	}
+
+	@Test
+	public void hasMappingForPattern() {
+		assertTrue(registry.hasMappingForPattern("/resources/**"));
+		assertFalse(registry.hasMappingForPattern("/whatever"));
+	}
+
+	@Test
+	public void resourceResolversAndTransformers() {
+		ResourceResolver resolver = Mockito.mock(ResourceResolver.class);
+		List<ResourceResolver> resolvers = Arrays.<ResourceResolver>asList(resolver);
+		registry.setResourceResolvers(resolvers);
+
+		ResourceTransformer transformer = Mockito.mock(ResourceTransformer.class);
+		List<ResourceTransformer> transformers = Arrays.asList(transformer);
+		registry.setResourceTransformers(transformers);
+
+		SimpleUrlHandlerMapping hm = (SimpleUrlHandlerMapping) registry.getHandlerMapping();
+		ResourceHttpRequestHandler handler = (ResourceHttpRequestHandler) hm.getUrlMap().values().iterator().next();
+
+		assertEquals(resolvers, handler.getResourceResolvers());
+		assertEquals(transformers, handler.getResourceTransformers());
 	}
 
 	@Test

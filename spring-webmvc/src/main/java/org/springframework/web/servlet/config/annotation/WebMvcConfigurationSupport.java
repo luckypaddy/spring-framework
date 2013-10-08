@@ -17,6 +17,7 @@
 package org.springframework.web.servlet.config.annotation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +70,7 @@ import org.springframework.web.servlet.handler.AbstractHandlerMapping;
 import org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping;
 import org.springframework.web.servlet.handler.ConversionServiceExposingInterceptor;
 import org.springframework.web.servlet.handler.HandlerExceptionResolverComposite;
+import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.servlet.mvc.Controller;
 import org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter;
 import org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter;
@@ -77,6 +79,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExc
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
+import org.springframework.web.servlet.resource.ResourceUrlGenerator;
 
 /**
  * This is the main class providing the configuration behind the MVC Java config.
@@ -305,11 +308,24 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 	 */
 	@Bean
 	public HandlerMapping resourceHandlerMapping() {
-		ResourceHandlerRegistry registry = new ResourceHandlerRegistry(applicationContext, servletContext);
+		ResourceHandlerRegistry registry = new ResourceHandlerRegistry(
+				this.applicationContext, this.servletContext);
 		addResourceHandlers(registry);
 		AbstractHandlerMapping handlerMapping = registry.getHandlerMapping();
 		handlerMapping = handlerMapping != null ? handlerMapping : new EmptyHandlerMapping();
 		return handlerMapping;
+	}
+
+	/**
+	 * Return a {@link ResourceUrlGenerator} to use to generate URLs for resources.
+	 */
+	@Bean
+	public ResourceUrlGenerator resourceUrlGenerator() {
+		Map<String, ?> handlerMap = Collections.<String, Object>emptyMap();
+		if (resourceHandlerMapping() instanceof SimpleUrlHandlerMapping) {
+			handlerMap = ((SimpleUrlHandlerMapping) resourceHandlerMapping()).getUrlMap();
+		}
+		return new ResourceUrlGenerator(handlerMap);
 	}
 
 	/**
