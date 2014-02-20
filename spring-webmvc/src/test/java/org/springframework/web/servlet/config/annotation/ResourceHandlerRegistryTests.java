@@ -113,13 +113,6 @@ public class ResourceHandlerRegistryTests {
 		assertEquals(transformers, handler.getResourceTransformers());
 	}
 
-	@Test
-	public void hasMappingForPattern() {
-		assertTrue(registry.hasMappingForPattern("/resources/**"));
-		assertFalse(registry.hasMappingForPattern("/whatever"));
-	}
-
-
 	private ResourceHttpRequestHandler getHandler(String pathPattern) {
 		SimpleUrlHandlerMapping handlerMapping = (SimpleUrlHandlerMapping) registry.getHandlerMapping();
 		return (ResourceHttpRequestHandler) handlerMapping.getUrlMap().get(pathPattern);
