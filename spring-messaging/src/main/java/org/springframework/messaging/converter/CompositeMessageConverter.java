@@ -39,21 +39,21 @@ public class CompositeMessageConverter implements MessageConverter {
 
 
 	/**
-	 * Create a new instance with the given {@link MessageConverter}s in turn configuring
-	 * each with a {@link DefaultContentTypeResolver}.
+	 * Create a new instance with the given {@link MessageConverter}s.
 	 */
 	public CompositeMessageConverter(Collection<MessageConverter> converters) {
-		this(new ArrayList<MessageConverter>(converters), new DefaultContentTypeResolver());
+		Assert.notEmpty(converters, "Converters must not be null");
+		this.converters = new ArrayList<MessageConverter>(converters);
 	}
 
 	/**
 	 * Create an instance with the given {@link MessageConverter}s and configure all with
-	 * the given {@link ContentTypeResolver}.
+	 * the given {@link ContentTypeResolver} (for example a new
+	 * {@link DefaultContentTypeResolver} instance).
 	 */
 	public CompositeMessageConverter(Collection<MessageConverter> converters, ContentTypeResolver resolver) {
-		Assert.notEmpty(converters, "Converters must not be null");
+		this(converters);
 		Assert.notNull(resolver, "ContentTypeResolver must not be null");
-		this.converters = new ArrayList<MessageConverter>(converters);
 		this.contentTypeResolver = resolver;
 		applyContentTypeResolver(converters, resolver);
 	}
@@ -68,7 +68,6 @@ public class CompositeMessageConverter implements MessageConverter {
 			}
 		}
 	}
-
 
 	public void setContentTypeResolver(ContentTypeResolver resolver) {
 		this.contentTypeResolver = resolver;
