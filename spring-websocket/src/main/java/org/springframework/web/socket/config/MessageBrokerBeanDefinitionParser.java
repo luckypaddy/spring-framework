@@ -17,7 +17,9 @@
 package org.springframework.web.socket.config;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.w3c.dom.Element;
 
@@ -124,8 +126,24 @@ class MessageBrokerBeanDefinitionParser implements BeanDefinitionParser {
 		beanName = registerBeanDef(beanDef, parserCxt, source);
 		RuntimeBeanReference userSessionRegistry = new RuntimeBeanReference(beanName);
 
+		Map<String, Integer> bufferSizes = new LinkedHashMap<String, Integer>();
+
+		for(Element stompEndpointElem : DomUtils.getChildElementsByTagName(element, "stomp-endpoint")) {
+
+			String pathAttribute = stompEndpointElem.getAttribute("path");
+			if(StringUtils.hasText(pathAttribute)) {
+				List<String> paths = Arrays.asList(StringUtils.tokenizeToStringArray(pathAttribute, ","));
+				for(String path : paths) {
+					if(stompEndpointElem.hasAttribute("max-frame-size")) {
+						String fragmentedFrameMaxSize = stompEndpointElem.getAttribute("max-frame-size");
+						bufferSizes.put(path, Integer.parseInt(fragmentedFrameMaxSize));
+					}
+				}
+			}
+		}
+
 		RuntimeBeanReference subProtocolWsHandler = registerSubProtocolWebSocketHandler(
-				clientInChannel, clientOutChannel, userSessionRegistry, parserCxt, source);
+				clientInChannel, clientOutChannel, userSessionRegistry, parserCxt, source, bufferSizes);
 
 		for(Element stompEndpointElem : DomUtils.getChildElementsByTagName(element, "stomp-endpoint")) {
 
@@ -144,6 +162,7 @@ class MessageBrokerBeanDefinitionParser implements BeanDefinitionParser {
 				}
 				urlMap.put(path, httpRequestHandler);
 			}
+
 		}
 
 		registerBeanDef(handlerMappingDef, parserCxt, source);
@@ -225,10 +244,12 @@ class MessageBrokerBeanDefinitionParser implements BeanDefinitionParser {
 
 	private RuntimeBeanReference registerSubProtocolWebSocketHandler(
 			RuntimeBeanReference clientInChannel, RuntimeBeanReference clientOutChannel,
-			RuntimeBeanReference userSessionRegistry, ParserContext parserCxt, Object source) {
+			RuntimeBeanReference userSessionRegistry, ParserContext parserCxt, Object source,
+			Map<String, Integer> maxFrameSizeByPath) {
 
 		RootBeanDefinition stompHandlerDef = new RootBeanDefinition(StompSubProtocolHandler.class);
 		stompHandlerDef.getPropertyValues().add("userSessionRegistry", userSessionRegistry);
+		stompHandlerDef.getPropertyValues().add("maxFrameSizeByPath", maxFrameSizeByPath);
 		registerBeanDef(stompHandlerDef, parserCxt, source);
 
 		ConstructorArgumentValues cavs = new ConstructorArgumentValues();

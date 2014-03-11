@@ -22,6 +22,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.HttpRequestHandler;
 import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.messaging.StompSubProtocolHandler;
 import org.springframework.web.socket.server.HandshakeHandler;
 import org.springframework.web.socket.server.support.WebSocketHttpRequestHandler;
 import org.springframework.web.socket.sockjs.support.SockJsHttpRequestHandler;
@@ -42,20 +43,26 @@ public class WebMvcStompWebSocketEndpointRegistration implements StompWebSocketE
 
 	private final TaskScheduler sockJsTaskScheduler;
 
+	private final StompSubProtocolHandler stompHandler;
+
 	private HandshakeHandler handshakeHandler;
 
 	private StompSockJsServiceRegistration registration;
 
+	private int maxFrameSize = 0;
+
 
 	public WebMvcStompWebSocketEndpointRegistration(String[] paths, WebSocketHandler webSocketHandler,
-			TaskScheduler sockJsTaskScheduler) {
+			TaskScheduler sockJsTaskScheduler, StompSubProtocolHandler stompHandler) {
 
 		Assert.notEmpty(paths, "No paths specified");
 		Assert.notNull(webSocketHandler, "WebSocketHandler must not be null");
+		Assert.notNull(stompHandler, "StompSubProtocolHandler must not be null");
 
 		this.paths = paths;
 		this.webSocketHandler = webSocketHandler;
 		this.sockJsTaskScheduler = sockJsTaskScheduler;
+		this.stompHandler = stompHandler;
 	}
 
 	/**
@@ -97,9 +104,18 @@ public class WebMvcStompWebSocketEndpointRegistration implements StompWebSocketE
 						new WebSocketHttpRequestHandler(this.webSocketHandler, this.handshakeHandler) :
 						new WebSocketHttpRequestHandler(this.webSocketHandler);
 				mappings.add(handler, path);
+				if(maxFrameSize != 0) {
+					this.stompHandler.addMaxFrameSize(path, maxFrameSize);
+				}
 			}
 		}
 		return mappings;
+	}
+
+	@Override
+	public StompWebSocketEndpointRegistration maxFrameSize(int maxSize) {
+		this.maxFrameSize = maxSize;
+		return this;
 	}
 
 

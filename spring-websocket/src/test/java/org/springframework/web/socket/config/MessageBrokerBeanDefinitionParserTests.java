@@ -18,11 +18,13 @@ package org.springframework.web.socket.config;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
@@ -101,6 +103,10 @@ public class MessageBrokerBeanDefinitionParserTests {
 		StompSubProtocolHandler stompHandler =
 				(StompSubProtocolHandler) subProtocolWsHandler.getProtocolHandlerMap().get("v12.stomp");
 		assertNotNull(stompHandler);
+		Map<String, Integer> maxFrameSizeByPath = (Map<String, Integer>)new  DirectFieldAccessor(stompHandler).getPropertyValue("maxFrameSizeByPath");
+		assertEquals(2, maxFrameSizeByPath.size());
+		assertEquals(new Integer(123), maxFrameSizeByPath.get("/foo"));
+		assertEquals(new Integer(123), maxFrameSizeByPath.get("/bar"));
 
 		httpRequestHandler = (HttpRequestHandler) suhm.getUrlMap().get("/test/**");
 		assertNotNull(httpRequestHandler);

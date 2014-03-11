@@ -36,4 +36,10 @@ public interface StompWebSocketEndpointRegistration {
 	 */
 	StompWebSocketEndpointRegistration setHandshakeHandler(HandshakeHandler handshakeHandler);
 
+	/**
+	 * Configure the maximum size in bytes of a STOMP frame.
+	 * @since 4.0.3
+	 */
+	StompWebSocketEndpointRegistration maxFrameSize(int maxFrameSize);
+
 }

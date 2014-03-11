@@ -1,5 +1,5 @@
 = Spring Framework Reference Documentation
-Rod Johnson; Juergen Hoeller; Keith Donald; Colin Sampaleanu; Rob Harrop; Thomas Risberg; Alef Arendsen; Darren Davison; Dmitriy Kopylenko; Mark Pollack; Thierry Templier; Erwin Vervaet; Portia Tung; Ben Hale; Adrian Colyer; John Lewis; Costin Leau; Mark Fisher; Sam Brannen; Ramnivas Laddad; Arjen Poutsma; Chris Beams; Tareq Abedrabbo; Andy Clement; Dave Syer; Oliver Gierke; Rossen Stoyanchev; Phillip Webb; Rob Winch; Brian Clozel; Stephane Nicoll
+Rod Johnson; Juergen Hoeller; Keith Donald; Colin Sampaleanu; Rob Harrop; Thomas Risberg; Alef Arendsen; Darren Davison; Dmitriy Kopylenko; Mark Pollack; Thierry Templier; Erwin Vervaet; Portia Tung; Ben Hale; Adrian Colyer; John Lewis; Costin Leau; Mark Fisher; Sam Brannen; Ramnivas Laddad; Arjen Poutsma; Chris Beams; Tareq Abedrabbo; Andy Clement; Dave Syer; Oliver Gierke; Rossen Stoyanchev; Phillip Webb; Rob Winch; Brian Clozel; Stephane Nicoll; Sebastien Deleuze
 
 
 :javadoc-baseurl: http://docs.spring.io/spring/docs/current/javadoc-api
@@ -37412,7 +37412,8 @@ The Spring Framework provides support for using STOMP over WebSocket through
 the +spring-messaging+ and +spring-websocket+ modules. It's easy to enable it.
 
 Here is an example of configuring a STOMP WebSocket endpoint with SockJS fallback
-options. The endpoint is available for clients to connect to at URL path `/portfolio`:
+options. The endpoint is available for clients to connect to at URL path `/portfolio`
+and is configured with a 2 Mbytes frame size limit (1 Mbytes by default):
 
 [source,java,indent=0]
 [subs="verbatim,quotes"]
@@ -37426,7 +37427,7 @@ options. The endpoint is available for clients to connect to at URL path `/portf
 
 		@Override
 		public void registerStompEndpoints(StompEndpointRegistry registry) {
-			registry.addEndpoint("/portfolio").withSockJS();
+			registry.addEndpoint("/portfolio").maxFrameSize(2097152).withSockJS();
 		}
 
 		// ...
@@ -37449,7 +37450,7 @@ XML configuration equivalent:
 			http://www.springframework.org/schema/websocket/spring-websocket-4.0.xsd">
 
 		<websocket:message-broker>
-			<websocket:stomp-endpoint path="/portfolio">
+			<websocket:stomp-endpoint path="/portfolio" max-frame-size="2097152">
 				<websocket:sockjs/>
 			</websocket:stomp-endpoint>
 			...

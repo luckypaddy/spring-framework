@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.simp.user.DefaultUserSessionRegistry;
@@ -81,12 +82,20 @@ public class WebMvcStompEndpointRegistryTests {
 		assertEquals(0, hm.getUrlMap().size());
 
 		this.registry.addEndpoint("/stompOverWebSocket");
+		this.registry.addEndpoint("/stompOverWebSocketWithMaxFrameSize").maxFrameSize(123);
 		this.registry.addEndpoint("/stompOverSockJS").withSockJS();
 
 		hm = (SimpleUrlHandlerMapping) this.registry.getHandlerMapping();
-		assertEquals(2, hm.getUrlMap().size());
+		assertEquals(3, hm.getUrlMap().size());
 		assertNotNull(hm.getUrlMap().get("/stompOverWebSocket"));
+		assertNotNull(hm.getUrlMap().get("/stompOverWebSocketWithMaxFrameSize"));
 		assertNotNull(hm.getUrlMap().get("/stompOverSockJS/**"));
+		StompSubProtocolHandler stompHandler = (StompSubProtocolHandler)new DirectFieldAccessor(this.registry).getPropertyValue("stompHandler");
+		Map maxFrameSizeByPath = (Map)new DirectFieldAccessor(stompHandler).getPropertyValue("maxFrameSizeByPath");
+		assertEquals(1, maxFrameSizeByPath.size());
+		assertEquals(123, maxFrameSizeByPath.get("/stompOverWebSocketWithMaxFrameSize"));
+		assertFalse(maxFrameSizeByPath.containsKey("/stompOverWebSocket"));
+		assertFalse(maxFrameSizeByPath.containsKey("/stompOverSockJS"));
 	}
 
 }

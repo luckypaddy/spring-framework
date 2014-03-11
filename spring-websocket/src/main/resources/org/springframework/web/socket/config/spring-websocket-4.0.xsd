@@ -474,6 +474,14 @@
                 				]]></xsd:documentation>
                             </xsd:annotation>
                         </xsd:attribute>
+						<xsd:attribute name="max-frame-size" type="xsd:int" use="optional">
+							<xsd:annotation>
+								<xsd:documentation><![CDATA[
+	The maximum size in bytes of a STOMP frame for this endpoint.
+	Default value is 1024 * 1024.
+                ]]></xsd:documentation>
+							</xsd:annotation>
+						</xsd:attribute>
                     </xsd:complexType>
                 </xsd:element>
                 <xsd:choice>

@@ -134,14 +134,54 @@ public class StompWebSocketIntegrationTests extends AbstractWebSocketIntegration
 		}
 	}
 
+	@Test
+	public void sendFragmentedStompFrameToController() throws Exception {
+
+		TextMessage message1 = new TextMessage("SEND\ndestination:/app/body\n\n{\"body\": \"This is ");
+		TextMessage message2 = new TextMessage("a test\"}\0");
+
+		WebSocketSession session = doHandshake(new TestClientWebSocketHandler(0, message1, message2), "/ws").get();
+		SimpleController controller = this.wac.getBean(SimpleController.class);
+
+		try {
+			assertTrue(controller.latch.await(2, TimeUnit.SECONDS));
+			assertEquals("This is a test", controller.body);
+		}
+		finally {
+			session.close();
+		}
+	}
+
+	static class SimpleBean {
+		private String body;
+
+		SimpleBean() {
+		}
+
+		public String getBody() {
+			return body;
+		}
+
+		public void setBody(String body) {
+			this.body = body;
+		}
+	}
+
 
 	@IntegrationTestController
 	static class SimpleController {
 
 		private CountDownLatch latch = new CountDownLatch(1);
+		private String body = "";
 
 		@MessageMapping(value="/simple")
 		public void handle() {
+			this.latch.countDown();
+		}
+
+		@MessageMapping(value="/body")
+		public void handle(SimpleBean bean) {
+			this.body = bean.getBody();
 			this.latch.countDown();
 		}
 
@@ -209,7 +249,7 @@ public class StompWebSocketIntegrationTests extends AbstractWebSocketIntegration
 
 		@Override
 		public void registerStompEndpoints(StompEndpointRegistry registry) {
-			registry.addEndpoint("/ws").setHandshakeHandler(this.handshakeHandler);
+			registry.addEndpoint("/ws").maxFrameSize(100).setHandshakeHandler(this.handshakeHandler);
 		}
 
 		@Override

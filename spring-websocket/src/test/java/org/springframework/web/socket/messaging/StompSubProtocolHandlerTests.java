@@ -16,15 +16,19 @@
 
 package org.springframework.web.socket.messaging;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -49,6 +53,7 @@ import static org.mockito.Mockito.*;
  * Test fixture for {@link StompSubProtocolHandler} tests.
  *
  * @author Rossen Stoyanchev
+ * @author Sebastien Deleuze
  */
 public class StompSubProtocolHandlerTests {
 
@@ -63,7 +68,7 @@ public class StompSubProtocolHandlerTests {
 
 
 	@Before
-	public void setup() {
+	public void setup() throws URISyntaxException {
 		this.protocolHandler = new StompSubProtocolHandler();
 		this.channel = Mockito.mock(MessageChannel.class);
 		this.messageCaptor = ArgumentCaptor.forClass(Message.class);
@@ -71,6 +76,7 @@ public class StompSubProtocolHandlerTests {
 		this.session = new TestWebSocketSession();
 		this.session.setId("s1");
 		this.session.setPrincipal(new TestPrincipal("joe"));
+		this.session.setUri(new URI("/test"));
 	}
 
 	@Test
@@ -182,7 +188,7 @@ public class StompSubProtocolHandlerTests {
 	@Test
 	public void handleMessageFromClientInvalidStompCommand() {
 
-		TextMessage textMessage = new TextMessage("FOO");
+		TextMessage textMessage = new TextMessage("FOO\0");
 
 		this.protocolHandler.handleMessageFromClient(this.session, textMessage, this.channel);
 
@@ -192,6 +198,48 @@ public class StompSubProtocolHandlerTests {
 		assertTrue(actual.getPayload().startsWith("ERROR"));
 	}
 
+	@Test
+	public void handleFragmentedStompFrame() {
+		DirectFieldAccessor protocolHandlerFieldAccessor = new DirectFieldAccessor(this.protocolHandler);
+		Map<String, ByteBuffer> stompFrameBuffers =
+				(Map<String, ByteBuffer>)protocolHandlerFieldAccessor.getPropertyValue("frameBuffers");
+		TextMessage textMessage1 = new TextMessage("SEND\n\nthis is");
+		TextMessage textMessage2 = new TextMessage("a test\0");
+		this.protocolHandler.handleMessageFromClient(this.session, textMessage1, this.channel);
+		verifyZeroInteractions(this.channel);
+		assertEquals(1, stompFrameBuffers.size());
+		this.protocolHandler.handleMessageFromClient(this.session, textMessage2, this.channel);
+		assertEquals(0, this.session.getSentMessages().size());
+		assertEquals(0, stompFrameBuffers.size());
+	}
+
+	@Test
+	public void handleFragmentedStompFrameWithFirstMessageTooBig() {
+		this.protocolHandler.setMaxFrameSize(8);
+		DirectFieldAccessor protocolHandlerFieldAccessor = new DirectFieldAccessor(this.protocolHandler);
+		Map<String, ByteBuffer> stompFrameBuffers =
+				(Map<String, ByteBuffer>)protocolHandlerFieldAccessor.getPropertyValue("frameBuffers");
+		TextMessage textMessage1 = new TextMessage("SEND\n\nthis is");
+		this.protocolHandler.handleMessageFromClient(this.session, textMessage1, this.channel);
+		assertEquals(1, this.session.getSentMessages().size());
+		assertEquals(0, stompFrameBuffers.size());
+	}
+
+	@Test
+	public void handleFragmentedStompFrameWithLastMessageTooBig() {
+		this.protocolHandler.setMaxFrameSize(15);
+		DirectFieldAccessor protocolHandlerFieldAccessor = new DirectFieldAccessor(this.protocolHandler);
+		Map<String, ByteBuffer> stompFrameBuffers =
+				(Map<String, ByteBuffer>)protocolHandlerFieldAccessor.getPropertyValue("frameBuffers");
+		TextMessage textMessage1 = new TextMessage("SEND\n\nthis is");
+		TextMessage textMessage2 = new TextMessage("a test\0");
+		this.protocolHandler.handleMessageFromClient(this.session, textMessage1, this.channel);
+		verifyZeroInteractions(this.channel);
+		assertEquals(1, stompFrameBuffers.size());
+		this.protocolHandler.handleMessageFromClient(this.session, textMessage2, this.channel);
+		assertEquals(1, this.session.getSentMessages().size());
+		assertEquals(0, stompFrameBuffers.size());
+	}
 
 	private static class UniqueUser extends TestPrincipal implements DestinationUserNameProvider {
 

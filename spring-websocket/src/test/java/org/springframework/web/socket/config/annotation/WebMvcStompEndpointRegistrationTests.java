@@ -28,6 +28,7 @@ import org.springframework.messaging.support.ExecutorSubscribableChannel;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.HttpRequestHandler;
+import org.springframework.web.socket.messaging.StompSubProtocolHandler;
 import org.springframework.web.socket.messaging.SubProtocolWebSocketHandler;
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 import org.springframework.web.socket.server.support.WebSocketHttpRequestHandler;
@@ -49,12 +50,15 @@ public class WebMvcStompEndpointRegistrationTests {
 
 	private TaskScheduler scheduler;
 
+	private StompSubProtocolHandler stompHandler;
+
 
 	@Before
 	public void setup() {
 		this.wsHandler = new SubProtocolWebSocketHandler(
 				new ExecutorSubscribableChannel(), new ExecutorSubscribableChannel());
 		this.scheduler = Mockito.mock(TaskScheduler.class);
+		this.stompHandler = Mockito.mock(StompSubProtocolHandler.class);
 	}
 
 	@Test
@@ -62,7 +66,7 @@ public class WebMvcStompEndpointRegistrationTests {
 
 
 		WebMvcStompWebSocketEndpointRegistration registration = new WebMvcStompWebSocketEndpointRegistration(
-				new String[] {"/foo"}, this.wsHandler, this.scheduler);
+				new String[] {"/foo"}, this.wsHandler, this.scheduler, this.stompHandler);
 
 		MultiValueMap<HttpRequestHandler, String> mappings = registration.getMappings();
 		assertEquals(1, mappings.size());
@@ -78,7 +82,7 @@ public class WebMvcStompEndpointRegistrationTests {
 		DefaultHandshakeHandler handshakeHandler = new DefaultHandshakeHandler();
 
 		WebMvcStompWebSocketEndpointRegistration registration = new WebMvcStompWebSocketEndpointRegistration(
-				new String[] {"/foo"}, this.wsHandler, this.scheduler);
+				new String[] {"/foo"}, this.wsHandler, this.scheduler, this.stompHandler);
 
 		registration.setHandshakeHandler(handshakeHandler);
 
@@ -99,7 +103,7 @@ public class WebMvcStompEndpointRegistrationTests {
 		DefaultHandshakeHandler handshakeHandler = new DefaultHandshakeHandler();
 
 		WebMvcStompWebSocketEndpointRegistration registration = new WebMvcStompWebSocketEndpointRegistration(
-				new String[] {"/foo"}, this.wsHandler, this.scheduler);
+				new String[] {"/foo"}, this.wsHandler, this.scheduler, this.stompHandler);
 
 		registration.setHandshakeHandler(handshakeHandler);
 		registration.withSockJS();

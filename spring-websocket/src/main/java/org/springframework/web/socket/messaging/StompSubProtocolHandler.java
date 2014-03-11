@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,15 @@
 package org.springframework.web.socket.messaging;
 
 import java.io.IOException;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -51,6 +54,7 @@ import org.springframework.web.socket.WebSocketSession;
  *
  * @author Rossen Stoyanchev
  * @author Andy Wilkinson
+ * @author Sebastien Deleuze
  * @since 4.0
  */
 public class StompSubProtocolHandler implements SubProtocolHandler {
@@ -65,6 +69,7 @@ public class StompSubProtocolHandler implements SubProtocolHandler {
 
 	private static final Log logger = LogFactory.getLog(StompSubProtocolHandler.class);
 
+	public static final int DEFAULT_MAX_FRAME_SIZE = 1024 * 1024;
 
 	private final StompDecoder stompDecoder = new StompDecoder();
 
@@ -72,6 +77,11 @@ public class StompSubProtocolHandler implements SubProtocolHandler {
 
 	private UserSessionRegistry userSessionRegistry;
 
+	private int maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
+
+	private Map<String, Integer> maxFrameSizeByPath = new ConcurrentHashMap<String, Integer>();
+
+	private final Map<String, ByteBuffer> frameBuffers = new ConcurrentHashMap<String, ByteBuffer>();
 
 	/**
 	 * Provide a registry with which to register active user session ids.
@@ -79,6 +89,32 @@ public class StompSubProtocolHandler implements SubProtocolHandler {
 	 */
 	public void setUserSessionRegistry(UserSessionRegistry registry) {
 		this.userSessionRegistry = registry;
+	}
+
+	/**
+	 * Set the maximum size in bytes of a STOMP frame.
+	 * Default is set to {@link StompSubProtocolHandler#DEFAULT_MAX_FRAME_SIZE}
+	 * @see StompSubProtocolHandler#addMaxFrameSize
+	 */
+	public void setMaxFrameSize(int maxSize) {
+		this.maxFrameSize = maxSize;
+	}
+
+	/**
+	 * Set the maximum size in bytes of a STOMP frame for this specific STOMP
+	 * endpoint path.
+	 * @see StompSubProtocolHandler#setMaxFrameSize
+	 */
+	public void addMaxFrameSize(String path, int maxSize) {
+		maxFrameSizeByPath.put(path, maxSize);
+	}
+
+	/**
+	 * Set directly the map that will define the maximum size in bytes of a
+	 * STOMP frame by STOMP endpoint path.
+	 */
+	public void setMaxFrameSizeByPath(Map<String, Integer> maxFrameSizeByPath) {
+		this.maxFrameSizeByPath = maxFrameSizeByPath;
 	}
 
 	/**
@@ -103,12 +139,47 @@ public class StompSubProtocolHandler implements SubProtocolHandler {
 		Throwable decodeFailure = null;
 		try {
 			Assert.isInstanceOf(TextMessage.class,  webSocketMessage);
+			String sessionId = session.getId();
+			Assert.notNull(sessionId, "WebSocket session identifier must be defined");
 			String payload = ((TextMessage) webSocketMessage).getPayload();
-			ByteBuffer byteBuffer = ByteBuffer.wrap(payload.getBytes(UTF8_CHARSET));
+			byte[] bytes = payload.getBytes(UTF8_CHARSET);
+			ByteBuffer byteBuffer;
+			boolean pendingFrame = frameBuffers.containsKey(sessionId);
 
-			message = this.stompDecoder.decode(byteBuffer);
-			if (message == null) {
-				decodeFailure = new IllegalStateException("Not a valid STOMP frame: " + payload);
+			try {
+				if(bytes[bytes.length - 1] != '\0') {
+					logger.debug("STOMP frame fragment detected");
+					if(pendingFrame) {
+						byteBuffer = frameBuffers.get(sessionId);
+					} else {
+						byteBuffer = ByteBuffer.allocate(this.getMaxFrameSize(session));
+						frameBuffers.put(sessionId, byteBuffer);
+					}
+					byteBuffer.put(bytes);
+					return;
+				} else {
+					if (pendingFrame) {
+						logger.debug("Last STOMP frame fragment detected");
+						byteBuffer = frameBuffers.get(sessionId);
+						byteBuffer.put(bytes);
+						byteBuffer.flip();
+					} else {
+						if(bytes.length > this.getMaxFrameSize(session)) {
+							throw new IllegalStateException("STOMP frame size (" + bytes.length
+									+ ") exceeds configured limit (" + this.getMaxFrameSize(session) + ")");
+						}
+						byteBuffer = ByteBuffer.wrap(bytes);
+					}
+					message = this.stompDecoder.decode(byteBuffer);
+					frameBuffers.remove(sessionId);
+					if (message == null) {
+						throw new IllegalStateException("Not a valid STOMP frame: " + payload);
+					}
+				}
+			} catch(BufferOverflowException e) {
+				frameBuffers.remove(sessionId);
+				throw new IllegalStateException("STOMP frame size can not exceeds configured limit ("
+						+ this.getMaxFrameSize(session) + ")");
 			}
 		}
 		catch (Throwable ex) {
@@ -285,6 +356,15 @@ public class StompSubProtocolHandler implements SubProtocolHandler {
 		headers.setSessionId(session.getId());
 		Message<?> message = MessageBuilder.withPayload(new byte[0]).setHeaders(headers).build();
 		outputChannel.send(message);
+	}
+
+	private int getMaxFrameSize(WebSocketSession session) {
+		if(session.getUri() == null) {
+			return this.maxFrameSize;
+		}
+		String endPointPath = session.getUri().getPath();
+		return maxFrameSizeByPath.containsKey(endPointPath) ?
+				maxFrameSizeByPath.get(endPointPath) : this.maxFrameSize;
 	}
 
 }
