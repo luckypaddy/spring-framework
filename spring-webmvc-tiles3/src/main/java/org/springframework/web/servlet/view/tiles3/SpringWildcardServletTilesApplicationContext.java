@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,9 @@ package org.springframework.web.servlet.view.tiles3;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Locale;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.servlet.ServletContext;
 
 import org.apache.tiles.request.ApplicationResource;
@@ -37,16 +36,19 @@ import org.springframework.web.context.support.ServletContextResourcePatternReso
  * Spring-specific subclass of the Tiles ServletApplicationContext.
  *
  * @author Rossen Stoyanchev
+ * @author Sebastien Deleuze
  * @since 3.2
  */
 public class SpringWildcardServletTilesApplicationContext extends ServletApplicationContext {
 
 	private final ResourcePatternResolver resolver;
 
+	protected final Pattern localePattern;
 
 	public SpringWildcardServletTilesApplicationContext(ServletContext servletContext) {
 		super(servletContext);
 		this.resolver = new ServletContextResourcePatternResolver(servletContext);
+		this.localePattern = Pattern.compile("(^.*?)_([^_]*)_?([^_]*)?_?([^_]*)?\\..*$");
 	}
 
 
@@ -82,10 +84,10 @@ public class SpringWildcardServletTilesApplicationContext extends ServletApplica
 		Collection<ApplicationResource> resourceList = new ArrayList<ApplicationResource>();
 		if (!ObjectUtils.isEmpty(resources)) {
 			for (Resource resource : resources) {
-				URL url;
 				try {
-					url = resource.getURL();
-					resourceList.add(new URLApplicationResource(url.toExternalForm(), url));
+					URL url = resource.getURL();
+					Locale locale = this.getLocaleFromPath(url.toExternalForm());
+					resourceList.add(new URLApplicationResource(url.toExternalForm(), locale,  url));
 				}
 				catch (IOException ex) {
 					// shouldn't happen with the kind of resources we're using
@@ -94,6 +96,39 @@ public class SpringWildcardServletTilesApplicationContext extends ServletApplica
 			}
 		}
 		return resourceList;
+	}
+
+	/**
+	 * Parse <code>localPath</code> in order to extract a valid {@link Locale},
+	 * return {@link Locale#ROOT} if not valid {@link Locale} is found.
+	 * @since 4.0.3
+	 */
+	protected Locale getLocaleFromPath(String localPath) {
+		Locale locale = Locale.ROOT;
+		List<Locale> localesToValidate = new ArrayList<Locale>();
+		Matcher matcher = this.localePattern.matcher(localPath);
+		if(matcher.matches()) {
+			if (matcher.group(3).equals("") && matcher.group(4).equals("")) {
+				localesToValidate.add(new Locale(matcher.group(2)));
+			} else if (matcher.group(4).equals("")) {
+				localesToValidate.add(new Locale(matcher.group(2), matcher.group(3)));
+				localesToValidate.add(new Locale(matcher.group(3)));
+			} else {
+				localesToValidate.add(new Locale(matcher.group(2), matcher.group(3), matcher.group(4)));
+				localesToValidate.add(new Locale(matcher.group(3), matcher.group(4)));
+				localesToValidate.add(new Locale(matcher.group(4)));
+			}
+			for (Locale availableLocale : Locale.getAvailableLocales()) {
+				for(Locale localeToValidate : localesToValidate) {
+					if (availableLocale.equals(localeToValidate)) {
+						locale = localeToValidate;
+						break;
+					}
+				}
+			}
+
+		}
+		return locale;
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,13 @@ import org.springframework.mock.web.test.MockHttpServletRequest;
 import org.springframework.mock.web.test.MockHttpServletResponse;
 import org.springframework.mock.web.test.MockServletContext;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Test fixture for {@link TilesConfigurer}.
  *
  * @author Nicolas Le Bas
+ * @author Sebastien Deleuze
  */
 public class TilesConfigurerTests {
 
@@ -58,6 +59,26 @@ public class TilesConfigurerTests {
 		tc.destroy();
 	}
 
+	// SPR-11491
+	@Test
+	public void simpleBootstrapWithUnderscoreInDefinitionFilename() {
+		MockServletContext servletContext = new MockServletContext();
+
+		TilesConfigurer tc = new TilesConfigurer();
+		tc.setDefinitions("/org/springframework/web/servlet/view/tiles3/tiles_definitions.xml");
+		tc.setCheckRefresh(true);
+		tc.setServletContext(servletContext);
+		tc.afterPropertiesSet();
+
+		ApplicationContext tilesContext = ServletUtil.getApplicationContext(servletContext);
+
+		BasicTilesContainer container = (BasicTilesContainer) TilesAccess.getContainer(tilesContext);
+		Request requestContext = new ServletRequest(container.getApplicationContext(),
+				new MockHttpServletRequest(), new MockHttpServletResponse());
+		assertNotNull(container.getDefinitionsFactory().getDefinition("test", requestContext));
+
+		tc.destroy();
+	}
 
 	@Configuration
 	public static class AppConfig {
