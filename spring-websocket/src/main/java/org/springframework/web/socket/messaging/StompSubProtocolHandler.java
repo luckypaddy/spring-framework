@@ -40,6 +40,7 @@ import org.springframework.messaging.simp.stomp.StompEncoder;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.simp.user.DestinationUserNameProvider;
 import org.springframework.messaging.simp.user.UserDestinationMessageHandler;
+import org.springframework.messaging.simp.user.UserPrincipal;
 import org.springframework.messaging.simp.user.UserSessionRegistry;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.util.Assert;
@@ -47,6 +48,7 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.adapter.standard.StandardWebSocketSession;
 
 /**
  * A {@link SubProtocolHandler} for STOMP that supports versions 1.0, 1.1, and 1.2
@@ -204,6 +206,9 @@ public class StompSubProtocolHandler implements SubProtocolHandler {
 			}
 
 			headers.setSessionId(session.getId());
+			if (SimpMessageType.CONNECT.equals(headers.getMessageType()) && session instanceof StandardWebSocketSession) {
+				((StandardWebSocketSession)session).setUser(new UserPrincipal(headers.getLogin()));
+			}
 			headers.setUser(session.getPrincipal());
 
 			message = MessageBuilder.withPayload(message.getPayload()).setHeaders(headers).build();

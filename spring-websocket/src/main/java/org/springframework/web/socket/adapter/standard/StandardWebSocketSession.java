@@ -54,7 +54,7 @@ public class StandardWebSocketSession extends AbstractWebSocketSession<Session> 
 
 	private final InetSocketAddress remoteAddress;
 
-	private final Principal user;
+	private Principal user;
 
 	private List<WebSocketExtension> extensions;
 
@@ -111,6 +111,10 @@ public class StandardWebSocketSession extends AbstractWebSocketSession<Session> 
 	@Override
 	public HttpHeaders getHandshakeHeaders() {
 		return this.handshakeHeaders;
+	}
+
+	public void setUser(Principal user) {
+		this.user = user;
 	}
 
 	@Override
