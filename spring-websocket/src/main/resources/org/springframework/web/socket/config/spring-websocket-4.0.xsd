@@ -575,6 +575,13 @@
                     ]]></xsd:documentation>
                 </xsd:annotation>
             </xsd:attribute>
+            <xsd:attribute name="frame-buffer-size" type="xsd:int">
+                <xsd:annotation>
+                    <xsd:documentation><![CDATA[
+	The maximum size in bytes of the frame buffer for simple messaging protocols like STOMP.
+                    ]]></xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
             <xsd:attribute name="order" type="xsd:token">
                 <xsd:annotation>
                     <xsd:documentation><![CDATA[

@@ -25,6 +25,7 @@ import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.core.io.ClassPathResource;
@@ -103,6 +104,8 @@ public class MessageBrokerBeanDefinitionParserTests {
 		StompSubProtocolHandler stompHandler =
 				(StompSubProtocolHandler) subProtocolWsHandler.getProtocolHandlerMap().get("v12.stomp");
 		assertNotNull(stompHandler);
+		int maxFrameBufferSize = (int)new  DirectFieldAccessor(stompHandler).getPropertyValue("maxFrameBufferSize");
+		assertEquals(123, maxFrameBufferSize);
 
 		httpRequestHandler = (HttpRequestHandler) suhm.getUrlMap().get("/test/**");
 		assertNotNull(httpRequestHandler);

@@ -42,7 +42,8 @@ public abstract class WebSocketMessageBrokerConfigurationSupport extends Abstrac
 	@Bean
 	public HandlerMapping stompWebSocketHandlerMapping() {
 		WebMvcStompEndpointRegistry registry = new WebMvcStompEndpointRegistry(
-				subProtocolWebSocketHandler(), userSessionRegistry(), messageBrokerSockJsTaskScheduler());
+				subProtocolWebSocketHandler(), userSessionRegistry(),
+				messageBrokerSockJsTaskScheduler(), getBrokerRegistry());
 		registerStompEndpoints(registry);
 		return registry.getHandlerMapping();
 	}

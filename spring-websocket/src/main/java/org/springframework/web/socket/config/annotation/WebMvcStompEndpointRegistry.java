@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.simp.user.UserSessionRegistry;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.Assert;
@@ -57,7 +58,8 @@ public class WebMvcStompEndpointRegistry implements StompEndpointRegistry {
 
 
 	public WebMvcStompEndpointRegistry(WebSocketHandler webSocketHandler,
-			UserSessionRegistry userSessionRegistry, TaskScheduler defaultSockJsTaskScheduler) {
+			UserSessionRegistry userSessionRegistry, TaskScheduler defaultSockJsTaskScheduler,
+			MessageBrokerRegistry brokerRegistry) {
 
 		Assert.notNull(webSocketHandler);
 		Assert.notNull(userSessionRegistry);
@@ -66,6 +68,9 @@ public class WebMvcStompEndpointRegistry implements StompEndpointRegistry {
 		this.subProtocolWebSocketHandler = unwrapSubProtocolWebSocketHandler(webSocketHandler);
 		this.stompHandler = new StompSubProtocolHandler();
 		this.stompHandler.setUserSessionRegistry(userSessionRegistry);
+		if(brokerRegistry.getMaxFrameBufferSize() != null) {
+			this.stompHandler.setMaxFrameBufferSize(brokerRegistry.getMaxFrameBufferSize());
+		}
 		this.sockJsScheduler = defaultSockJsTaskScheduler;
 	}
 

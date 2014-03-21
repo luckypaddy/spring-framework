@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import java.nio.charset.Charset;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,11 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.SimpMessageType;
-import org.springframework.messaging.simp.stomp.StompCommand;
-import org.springframework.messaging.simp.stomp.StompConversionException;
-import org.springframework.messaging.simp.stomp.StompDecoder;
-import org.springframework.messaging.simp.stomp.StompEncoder;
-import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.messaging.simp.stomp.*;
 import org.springframework.messaging.simp.user.DestinationUserNameProvider;
 import org.springframework.messaging.simp.user.UserDestinationMessageHandler;
 import org.springframework.messaging.simp.user.UserSessionRegistry;
@@ -51,6 +49,7 @@ import org.springframework.web.socket.WebSocketSession;
  *
  * @author Rossen Stoyanchev
  * @author Andy Wilkinson
+ * @author Sebastien Deleuze
  * @since 4.0
  */
 public class StompSubProtocolHandler implements SubProtocolHandler {
@@ -65,13 +64,13 @@ public class StompSubProtocolHandler implements SubProtocolHandler {
 
 	private static final Log logger = LogFactory.getLog(StompSubProtocolHandler.class);
 
-
-	private final StompDecoder stompDecoder = new StompDecoder();
-
 	private final StompEncoder stompEncoder = new StompEncoder();
 
 	private UserSessionRegistry userSessionRegistry;
 
+	private int maxFrameBufferSize = 64 * 1024;
+
+	private final Map<String, StompDecoder> stompDecoders = new ConcurrentHashMap<String, StompDecoder>();
 
 	/**
 	 * Provide a registry with which to register active user session ids.
@@ -88,6 +87,13 @@ public class StompSubProtocolHandler implements SubProtocolHandler {
 		return this.userSessionRegistry;
 	}
 
+	/**
+	 * Configure the maximum size in bytes of the frame buffer.
+	 */
+	public void setMaxFrameBufferSize(int maxFrameBufferSize) {
+		this.maxFrameBufferSize = maxFrameBufferSize;
+	}
+
 	@Override
 	public List<String> getSupportedProtocols() {
 		return Arrays.asList("v10.stomp", "v11.stomp", "v12.stomp");
@@ -101,18 +107,31 @@ public class StompSubProtocolHandler implements SubProtocolHandler {
 
 		Message<?> message = null;
 		Throwable decodeFailure = null;
+		String sessionId = session.getId();
+
 		try {
 			Assert.isInstanceOf(TextMessage.class,  webSocketMessage);
+			Assert.notNull(sessionId, "WebSocket session identifier must be defined");
 			String payload = ((TextMessage) webSocketMessage).getPayload();
-			ByteBuffer byteBuffer = ByteBuffer.wrap(payload.getBytes(UTF8_CHARSET));
-
-			message = this.stompDecoder.decode(byteBuffer);
-			if (message == null) {
-				decodeFailure = new IllegalStateException("Not a valid STOMP frame: " + payload);
+			StompDecoder stompDecoder;
+			if(stompDecoders.containsKey(sessionId)) {
+				stompDecoder = stompDecoders.get(sessionId);
+			} else {
+				stompDecoder = new StompDecoder(maxFrameBufferSize);
+			}
+			message = stompDecoder.decode(ByteBuffer.wrap(payload.getBytes(UTF8_CHARSET)));
+			if(message == null) {
+				logger.trace("Received STOMP fragment from client session=" + session.getId());
+				stompDecoders.put(sessionId, stompDecoder);
+				return;
 			}
 		}
 		catch (Throwable ex) {
 			decodeFailure = ex;
+		}
+
+		if(stompDecoders.containsKey(sessionId)) {
+			stompDecoders.remove(sessionId);
 		}
 
 		if (decodeFailure != null) {
@@ -280,6 +299,9 @@ public class StompSubProtocolHandler implements SubProtocolHandler {
 		if ((this.userSessionRegistry != null) && (principal != null)) {
 			String userName = resolveNameForUserSessionRegistry(principal);
 			this.userSessionRegistry.unregisterSessionId(userName, session.getId());
+		}
+		if(stompDecoders.containsKey(session.getId())) {
+			stompDecoders.remove(session.getId());
 		}
 
 		StompHeaderAccessor headers = StompHeaderAccessor.create(StompCommand.DISCONNECT);

@@ -17,7 +17,9 @@
 package org.springframework.web.socket.config;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.w3c.dom.Element;
 
@@ -124,8 +126,11 @@ class MessageBrokerBeanDefinitionParser implements BeanDefinitionParser {
 		beanName = registerBeanDef(beanDef, parserCxt, source);
 		RuntimeBeanReference userSessionRegistry = new RuntimeBeanReference(beanName);
 
+		String frameBufferSizeAttribute = element.getAttribute("frame-buffer-size");
+		Integer maxFrameBufferSize = frameBufferSizeAttribute.isEmpty() ? null : Integer.parseInt(frameBufferSizeAttribute);
+
 		RuntimeBeanReference subProtocolWsHandler = registerSubProtocolWebSocketHandler(
-				clientInChannel, clientOutChannel, userSessionRegistry, parserCxt, source);
+				clientInChannel, clientOutChannel, userSessionRegistry, maxFrameBufferSize, parserCxt, source);
 
 		for(Element stompEndpointElem : DomUtils.getChildElementsByTagName(element, "stomp-endpoint")) {
 
@@ -144,6 +149,7 @@ class MessageBrokerBeanDefinitionParser implements BeanDefinitionParser {
 				}
 				urlMap.put(path, httpRequestHandler);
 			}
+
 		}
 
 		registerBeanDef(handlerMappingDef, parserCxt, source);
@@ -228,10 +234,14 @@ class MessageBrokerBeanDefinitionParser implements BeanDefinitionParser {
 
 	private RuntimeBeanReference registerSubProtocolWebSocketHandler(
 			RuntimeBeanReference clientInChannel, RuntimeBeanReference clientOutChannel,
-			RuntimeBeanReference userSessionRegistry, ParserContext parserCxt, Object source) {
+			RuntimeBeanReference userSessionRegistry, Integer maxFrameBufferSize,
+			ParserContext parserCxt, Object source) {
 
 		RootBeanDefinition stompHandlerDef = new RootBeanDefinition(StompSubProtocolHandler.class);
 		stompHandlerDef.getPropertyValues().add("userSessionRegistry", userSessionRegistry);
+		if(maxFrameBufferSize != null) {
+			stompHandlerDef.getPropertyValues().add("maxFrameBufferSize", maxFrameBufferSize);
+		}
 		registerBeanDef(stompHandlerDef, parserCxt, source);
 
 		ConstructorArgumentValues cavs = new ConstructorArgumentValues();

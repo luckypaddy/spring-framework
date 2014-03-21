@@ -47,6 +47,8 @@ public class MessageBrokerRegistry {
 
 	private ChannelRegistration brokerChannelRegistration = new ChannelRegistration();
 
+	private Integer maxFrameBufferSize;
+
 
 	public MessageBrokerRegistry(SubscribableChannel clientInboundChannel, MessageChannel clientOutboundChannel) {
 		Assert.notNull(clientInboundChannel);
@@ -119,6 +121,22 @@ public class MessageBrokerRegistry {
 		return this.brokerChannelRegistration;
 	}
 
+	/**
+	 * Configure the maximum size in bytes of the frame buffer.
+	 * @since 4.0.3
+	 */
+	public MessageBrokerRegistry setMaxFrameBufferSize(Integer maxFrameBufferSize) {
+		this.maxFrameBufferSize = maxFrameBufferSize;
+		return this;
+	}
+
+	/**
+	 * Get the maximum size in bytes of the frame buffer.
+	 * @since 4.0.3
+	 */
+	public Integer getMaxFrameBufferSize() {
+		return maxFrameBufferSize;
+	}
 
 	protected SimpleBrokerMessageHandler getSimpleBroker(SubscribableChannel brokerChannel) {
 		if ((this.simpleBrokerRegistration == null) && (this.brokerRelayRegistration == null)) {

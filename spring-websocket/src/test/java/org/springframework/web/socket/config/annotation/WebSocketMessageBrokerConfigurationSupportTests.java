@@ -24,11 +24,13 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.support.AbstractSubscribableChannel;
 import org.springframework.messaging.support.ExecutorSubscribableChannel;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -42,10 +44,13 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.handler.TestWebSocketSession;
+import org.springframework.web.socket.messaging.StompSubProtocolHandler;
 import org.springframework.web.socket.messaging.StompTextMessageBuilder;
+import org.springframework.web.socket.messaging.SubProtocolHandler;
 import org.springframework.web.socket.messaging.SubProtocolWebSocketHandler;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test fixture for {@link org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurationSupport}.
@@ -82,7 +87,10 @@ public class WebSocketMessageBrokerConfigurationSupportTests {
 		SubProtocolWebSocketHandler webSocketHandler = this.config.getBean(SubProtocolWebSocketHandler.class);
 
 		TextMessage textMessage = StompTextMessageBuilder.create(StompCommand.SEND).headers("destination:/foo").build();
-		webSocketHandler.handleMessage(new TestWebSocketSession(), textMessage);
+		TestWebSocketSession session = new TestWebSocketSession();
+		session.setId("1");
+
+		webSocketHandler.handleMessage(session, textMessage);
 
 		Message<?> message = channel.messages.get(0);
 		StompHeaderAccessor headers = StompHeaderAccessor.wrap(message);
@@ -98,6 +106,18 @@ public class WebSocketMessageBrokerConfigurationSupportTests {
 
 		assertEquals(1, handlers.size());
 		assertTrue(handlers.iterator().next() instanceof SubProtocolWebSocketHandler);
+	}
+
+	@Test
+	public void maxFrameBufferSize() {
+		SubProtocolWebSocketHandler subProtocolWebSocketHandler = this.config.getBean("subProtocolWebSocketHandler", SubProtocolWebSocketHandler.class);
+
+		List<SubProtocolHandler> protocolHandlers = subProtocolWebSocketHandler.getProtocolHandlers();
+		for(SubProtocolHandler protocolHandler : protocolHandlers) {
+			assertTrue(protocolHandler instanceof StompSubProtocolHandler);
+			DirectFieldAccessor protocolHandlerFieldAccessor = new DirectFieldAccessor(protocolHandler);
+			assertEquals(123, protocolHandlerFieldAccessor.getPropertyValue("maxFrameBufferSize"));
+		}
 	}
 
 
@@ -129,6 +149,10 @@ public class WebSocketMessageBrokerConfigurationSupportTests {
 			registry.addEndpoint("/simpleBroker");
 		}
 
+		@Override
+		public void configureMessageBroker(MessageBrokerRegistry registry) {
+			registry.setMaxFrameBufferSize(123);
+		}
 	}
 
 	@Configuration
