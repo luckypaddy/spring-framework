@@ -23,6 +23,8 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.junit.Test;
 import org.springframework.mock.web.test.MockHttpServletRequest;
+import org.springframework.util.AntPathMatcher;
+import org.springframework.web.util.UrlPathHelper;
 
 import static org.junit.Assert.*;
 
@@ -134,6 +136,19 @@ public class PatternsRequestConditionTests {
 		assertNotNull(match);
 		assertEquals((patternHasSuffix ? pattern : pattern + ".*"), match.getPatterns().iterator().next());
 	}
+
+	// SPR-11602
+
+	@Test
+	public void noSuffixForPatternWithUriVariablesAndRegexMatch() {
+		String p = "/{tutorial}/images/{image:[a-zA-Z0-9._-]+}";
+		PatternsRequestCondition c =  new PatternsRequestCondition(new String[]{p}, new UrlPathHelper(), new AntPathMatcher(), true, true);
+		assertEquals("/{tutorial}/images/{image:[a-zA-Z0-9._-]+}", c.getPatterns().iterator().next());
+
+		List<String> matchingPatterns = c.getMatchingPatterns("/tut/images/image.png");
+		assertEquals("/{tutorial}/images/{image:[a-zA-Z0-9._-]+}", matchingPatterns.get(0));
+	}
+
 
 	// SPR-8410
 

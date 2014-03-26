@@ -249,7 +249,7 @@ public final class PatternsRequestCondition extends AbstractRequestCondition<Pat
 				}
 			}
 			else {
-				if (!hasSuffix(pattern) && this.pathMatcher.match(pattern + ".*", lookupPath)) {
+				if (!hasSuffixOrRegex(pattern) && this.pathMatcher.match(pattern + ".*", lookupPath)) {
 					return pattern + ".*";
 				}
 			}
@@ -265,7 +265,7 @@ public final class PatternsRequestCondition extends AbstractRequestCondition<Pat
 		return null;
 	}
 
-	private boolean hasSuffix(String pattern) {
+	private boolean hasSuffixOrRegex(String pattern) {
 		boolean uriVarMode = false;
 		for (int i = pattern.length(); i > 0; i--) {
 			char c = pattern.charAt(i-1);
@@ -279,7 +279,7 @@ public final class PatternsRequestCondition extends AbstractRequestCondition<Pat
 				return false;
 			}
 			else {
-				if (!uriVarMode && c == '.') {
+				if ((!uriVarMode && c == '.') || (uriVarMode && c == ':')) {
 					return true;
 				}
 			}
