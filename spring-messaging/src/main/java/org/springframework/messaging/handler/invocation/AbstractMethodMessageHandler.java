@@ -31,6 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -39,6 +40,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.handler.DestinationPatternsMessageCondition;
+import org.springframework.messaging.handler.HandlerInterceptor;
 import org.springframework.messaging.handler.HandlerMethod;
 import org.springframework.messaging.handler.HandlerMethodSelector;
 import org.springframework.messaging.support.MessageBuilder;
@@ -86,6 +88,8 @@ public abstract class AbstractMethodMessageHandler<T>
 
 	private final Map<Class<?>, AbstractExceptionHandlerMethodResolver> exceptionHandlerCache =
 			new ConcurrentHashMap<Class<?>, AbstractExceptionHandlerMethodResolver>(64);
+
+	private List<HandlerInterceptor> interceptors = new ArrayList<HandlerInterceptor>();
 
 
 	/**
@@ -192,6 +196,13 @@ public abstract class AbstractMethodMessageHandler<T>
 		return this.applicationContext;
 	}
 
+	public void setInterceptors(List<HandlerInterceptor> interceptors) {
+		this.interceptors = interceptors;
+	}
+
+	public List<HandlerInterceptor> getInterceptors() {
+		return interceptors;
+	}
 
 	@Override
 	public void afterPropertiesSet() {
@@ -209,6 +220,12 @@ public abstract class AbstractMethodMessageHandler<T>
 				detectHandlerMethods(beanName);
 			}
 		}
+
+		if(this.interceptors.isEmpty()) {
+			this.detectInterceptors();
+		}
+
+
 	}
 
 	/**
@@ -296,6 +313,12 @@ public abstract class AbstractMethodMessageHandler<T>
 		}
 	}
 
+	protected void detectInterceptors() {
+		this.interceptors.addAll(
+				BeanFactoryUtils.beansOfTypeIncludingAncestors(
+						getApplicationContext(), HandlerInterceptor.class, true, false).values());
+	}
+
 	/**
 	 * Create a HandlerMethod instance from an Object handler that is either a handler
 	 * instance or a String-based bean name.
@@ -341,6 +364,10 @@ public abstract class AbstractMethodMessageHandler<T>
 
 		message = MessageBuilder.fromMessage(message).setHeader(
 				DestinationPatternsMessageCondition.LOOKUP_DESTINATION_HEADER, lookupDestination).build();
+
+		for(HandlerInterceptor interceptor : this.interceptors) {
+			interceptor.handle(message);
+		}
 
 		handleMessageInternal(message, lookupDestination);
 	}

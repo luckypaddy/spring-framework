@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.DestinationPatternsMessageCondition;
+import org.springframework.messaging.handler.HandlerInterceptor;
 import org.springframework.messaging.handler.HandlerMethod;
 import org.springframework.messaging.handler.HandlerMethodSelector;
 import org.springframework.messaging.handler.annotation.support.MessageMethodArgumentResolver;
@@ -34,9 +35,7 @@ import org.springframework.util.ReflectionUtils.MethodFilter;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 
 /**
  * Test fixture for
@@ -125,6 +124,20 @@ public class MethodMessageHandlerTests {
 		assertNotNull(this.testController.arguments.get("exception"));
 	}
 
+	@Test
+	public void handlerInterceptor() {
+
+		HandlerInterceptor interceptor = new TestHandlerInterceptor();
+		this.messageHandler.setInterceptors(Arrays.asList(interceptor));
+		this.messageHandler.handleMessage(toDestination("/test/handlerInterceptor"));
+
+		assertEquals("handlerInterceptor", this.testController.method);
+		Message<?> message = (Message<?>)this.testController.arguments.get("message");
+		assertNotNull(message);
+		assertEquals(((TestHandlerInterceptor)interceptor).message, message);
+
+	}
+
 	private Message<?> toDestination(String destination) {
 		return MessageBuilder.withPayload(new byte[0]).setHeader(DESTINATION_HEADER, destination).build();
 	}
@@ -142,6 +155,11 @@ public class MethodMessageHandlerTests {
 
 		public void handlerArgumentResolver(Message message) {
 			this.method = "handlerArgumentResolver";
+			this.arguments.put("message", message);
+		}
+
+		public void handlerInterceptor(Message message) {
+			this.method = "handlerInterceptor";
 			this.arguments.put("message", message);
 		}
 
@@ -279,6 +297,16 @@ public class MethodMessageHandlerTests {
 			}
 		};
 
+	}
+
+	private static class TestHandlerInterceptor implements HandlerInterceptor {
+
+		public Message<?> message;
+
+		@Override
+		public void handle(Message<?> message) {
+			this.message = message;
+		}
 	}
 
 }
