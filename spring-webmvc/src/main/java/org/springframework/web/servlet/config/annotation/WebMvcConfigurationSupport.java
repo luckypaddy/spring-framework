@@ -62,9 +62,7 @@ import org.springframework.web.context.ServletContextAware;
 import org.springframework.web.method.support.CompositeUriComponentsContributor;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
-import org.springframework.web.servlet.HandlerAdapter;
-import org.springframework.web.servlet.HandlerExceptionResolver;
-import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.servlet.*;
 import org.springframework.web.servlet.handler.AbstractHandlerMapping;
 import org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping;
 import org.springframework.web.servlet.handler.ConversionServiceExposingInterceptor;
@@ -79,6 +77,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
 import org.springframework.web.servlet.resource.ResourceUrlProvider;
 import org.springframework.web.servlet.resource.ResourceUrlProviderExposingInterceptor;
+import org.springframework.web.servlet.view.ContentNegotiatingViewResolver;
 import org.springframework.web.util.UrlPathHelper;
 
 /**
@@ -168,7 +167,6 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 	private List<HttpMessageConverter<?>> messageConverters;
 
 	private PathMatchConfigurer pathMatchConfigurer;
-
 
 	/**
 	 * Set the {@link javax.servlet.ServletContext}, e.g. for resource handling,
@@ -321,6 +319,13 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 	 * @see ViewControllerRegistry
 	 */
 	protected void addViewControllers(ViewControllerRegistry registry) {
+	}
+
+	/**
+	 * Override this method to configure view resolution.
+	 * @see ViewResolutionRegistry
+	 */
+	protected void configureViewResolution(ViewResolutionRegistry registry) {
 	}
 
 	/**
@@ -700,6 +705,38 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 		exceptionResolvers.add(exceptionHandlerExceptionResolver);
 		exceptionResolvers.add(new ResponseStatusExceptionResolver());
 		exceptionResolvers.add(new DefaultHandlerExceptionResolver());
+	}
+
+	/**
+	 * Register a {@link ViewResolverComposite} that contains an ordered list of
+	 * view resolvers obtained either through
+	 * {@link #configureViewResolution(ViewResolutionRegistry)}.
+	 */
+	@Bean
+	public ViewResolverComposite viewResolverComposite() {
+		ViewResolutionRegistry registry = new ViewResolutionRegistry();
+		configureViewResolution(registry);
+		ViewResolverComposite compositeViewResolver = new ViewResolverComposite();
+		compositeViewResolver.setServletContext(this.servletContext);
+		compositeViewResolver.setApplicationContext(this.applicationContext);
+		List<ViewResolver> viewResolvers = registry.getViewResolvers();
+		ContentNegotiatingViewResolver contentNegotiatingViewResolver = null;
+		List<ViewResolver> filteredViewResolvers = new ArrayList<ViewResolver>();
+		for(ViewResolver viewResolver : viewResolvers) {
+			if(viewResolver instanceof ContentNegotiatingViewResolver) {
+				contentNegotiatingViewResolver = (ContentNegotiatingViewResolver)viewResolver;
+				contentNegotiatingViewResolver.setContentNegotiationManager(this.mvcContentNegotiationManager());
+			} else {
+				filteredViewResolvers.add(viewResolver);
+			}
+		}
+		if(contentNegotiatingViewResolver != null) {
+			contentNegotiatingViewResolver.setViewResolvers(filteredViewResolvers);
+			viewResolvers = new ArrayList<ViewResolver>();
+			viewResolvers.add(contentNegotiatingViewResolver);
+		}
+		compositeViewResolver.setViewResolvers(viewResolvers);
+		return compositeViewResolver;
 	}
 
 	private final static class EmptyHandlerMapping extends AbstractHandlerMapping {

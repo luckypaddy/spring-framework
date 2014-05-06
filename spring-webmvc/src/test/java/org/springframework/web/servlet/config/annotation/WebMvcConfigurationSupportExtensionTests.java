@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.springframework.web.servlet.config.annotation;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
@@ -24,6 +25,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.DirectFieldAccessor;
+import org.springframework.core.Ordered;
 import org.springframework.tests.sample.beans.TestBean;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.io.FileSystemResourceLoader;
@@ -53,8 +55,7 @@ import org.springframework.web.context.support.StaticWebApplicationContext;
 import org.springframework.web.method.annotation.ModelAttributeMethodProcessor;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
-import org.springframework.web.servlet.HandlerExceptionResolver;
-import org.springframework.web.servlet.HandlerExecutionChain;
+import org.springframework.web.servlet.*;
 import org.springframework.web.servlet.handler.AbstractHandlerMapping;
 import org.springframework.web.servlet.handler.ConversionServiceExposingInterceptor;
 import org.springframework.web.servlet.handler.HandlerExceptionResolverComposite;
@@ -63,6 +64,9 @@ import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.resource.ResourceUrlProviderExposingInterceptor;
+import org.springframework.web.servlet.view.ContentNegotiatingViewResolver;
+import org.springframework.web.servlet.view.InternalResourceViewResolver;
+import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 
 /**
  * A test fixture with a sub-class of {@link WebMvcConfigurationSupport} that
@@ -75,7 +79,6 @@ public class WebMvcConfigurationSupportExtensionTests {
 	private TestWebMvcConfigurationSupport webConfig;
 
 	private StaticWebApplicationContext webAppContext;
-
 
 	@Before
 	public void setUp() {
@@ -203,6 +206,28 @@ public class WebMvcConfigurationSupportExtensionTests {
 		assertEquals(1, composite.getExceptionResolvers().size());
 	}
 
+	@Test
+	public void viewResolvers() throws Exception {
+		ViewResolverComposite viewResolver = webConfig.viewResolverComposite();
+		assertEquals(Ordered.LOWEST_PRECEDENCE, viewResolver.getOrder());
+		List<ViewResolver> viewResolvers = viewResolver.getViewResolvers();
+		DirectFieldAccessor viewResolverFieldAccessor = new DirectFieldAccessor(viewResolvers.get(0));
+		assertEquals(1, viewResolvers.size());
+		assertEquals(ContentNegotiatingViewResolver.class, viewResolvers.get(0).getClass());
+		assertFalse((Boolean)viewResolverFieldAccessor.getPropertyValue("useNotAcceptableStatusCode"));
+		List<View> defaultViews = (List<View>)viewResolverFieldAccessor.getPropertyValue("defaultViews");
+		assertNotNull(defaultViews);
+		assertEquals(1, defaultViews.size());
+		assertEquals(MappingJackson2JsonView.class, defaultViews.get(0).getClass());
+		assertNotNull(viewResolverFieldAccessor.getPropertyValue("contentNegotiationManager"));
+		viewResolvers = (List<ViewResolver>)viewResolverFieldAccessor.getPropertyValue("viewResolvers");
+		assertNotNull(viewResolvers);
+		assertEquals(1, viewResolvers.size());
+		assertEquals(InternalResourceViewResolver.class, viewResolvers.get(0).getClass());
+		viewResolverFieldAccessor = new DirectFieldAccessor(viewResolvers.get(0));
+		assertEquals("/", viewResolverFieldAccessor.getPropertyValue("prefix"));
+		assertEquals(".jsp", viewResolverFieldAccessor.getPropertyValue("suffix"));
+	}
 
 	@Controller
 	private static class TestController {
@@ -296,6 +321,12 @@ public class WebMvcConfigurationSupportExtensionTests {
 		@Override
 		public void addViewControllers(ViewControllerRegistry registry) {
 			registry.addViewController("/path");
+		}
+
+		@Override
+		public void configureViewResolution(ViewResolutionRegistry registry) {
+			registry.jsp("/", ".jsp");
+			registry.contentNegotiating().useNotAcceptable(false).defaultViews(new MappingJackson2JsonView());
 		}
 
 		@Override
