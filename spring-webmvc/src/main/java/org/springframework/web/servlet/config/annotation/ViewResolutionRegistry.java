@@ -18,9 +18,8 @@ package org.springframework.web.servlet.config.annotation;
 
 import org.springframework.web.servlet.View;
 import org.springframework.web.servlet.ViewResolver;
-import org.springframework.web.servlet.config.annotation.ViewResolutionRegistration.*;
 import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
-import org.springframework.web.servlet.view.tiles2.TilesConfigurer;
+import org.springframework.web.servlet.view.tiles3.TilesConfigurer;
 import org.springframework.web.servlet.view.velocity.VelocityConfigurer;
 
 import java.util.ArrayList;

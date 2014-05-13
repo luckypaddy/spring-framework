@@ -16,15 +16,15 @@
 
 package org.springframework.web.servlet.config.annotation;
 
-import org.springframework.web.servlet.view.tiles2.TilesConfigurer;
-import org.springframework.web.servlet.view.tiles2.TilesViewResolver;
+import org.springframework.web.servlet.view.tiles3.TilesConfigurer;
+import org.springframework.web.servlet.view.tiles3.TilesViewResolver;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * Encapsulates information required to create a Tiles view resolver and configurer.
+ * Encapsulates information required to create a Tiles 3 view resolver and configurer.
  *
  * @author Sebastien Deleuze
  * @since 4.1
