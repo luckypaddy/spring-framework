@@ -100,6 +100,13 @@ class WebMvcConfigurerComposite implements WebMvcConfigurer {
 	}
 
 	@Override
+	public void configureCors(CorsRegistry registry) {
+		for (WebMvcConfigurer delegate : this.delegates) {
+			delegate.configureCors(registry);
+		}
+	}
+
+	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 		for (WebMvcConfigurer delegate : this.delegates) {
 			delegate.addInterceptors(registry);

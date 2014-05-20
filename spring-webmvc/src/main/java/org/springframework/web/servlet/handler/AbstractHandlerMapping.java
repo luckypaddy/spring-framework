@@ -18,11 +18,13 @@ package org.springframework.web.servlet.handler;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.core.Ordered;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.Assert;
@@ -32,6 +34,7 @@ import org.springframework.web.context.support.WebApplicationObjectSupport;
 import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.servlet.cors.CorsHandler;
 import org.springframework.web.util.UrlPathHelper;
 
 /**
@@ -54,7 +57,7 @@ import org.springframework.web.util.UrlPathHelper;
  * @see #setInterceptors
  * @see org.springframework.web.servlet.HandlerInterceptor
  */
-public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
+public abstract class  AbstractHandlerMapping extends WebApplicationObjectSupport
 		implements HandlerMapping, Ordered {
 
 	private int order = Integer.MAX_VALUE;  // default: same as non-Ordered
@@ -65,11 +68,15 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 
 	private PathMatcher pathMatcher = new AntPathMatcher();
 
+	private CorsHandler corsHandler;
+
 	private final List<Object> interceptors = new ArrayList<Object>();
 
 	private final List<HandlerInterceptor> adaptedInterceptors = new ArrayList<HandlerInterceptor>();
 
 	private final List<MappedInterceptor> mappedInterceptors = new ArrayList<MappedInterceptor>();
+
+
 
 
 	/**
@@ -195,6 +202,7 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 		extendInterceptors(this.interceptors);
 		detectMappedInterceptors(this.mappedInterceptors);
 		initInterceptors();
+		initCorsHandler();
 	}
 
 	/**
@@ -242,6 +250,16 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 					this.adaptedInterceptors.add(adaptInterceptor(interceptor));
 				}
 			}
+		}
+	}
+
+	protected void initCorsHandler() {
+		try {
+			corsHandler = BeanFactoryUtils.beanOfTypeIncludingAncestors(
+					getApplicationContext(), CorsHandler.class, true, false);
+		}
+		catch (NoSuchBeanDefinitionException ex) {
+			// Nothing to do, CORS Handler is not mandatory
 		}
 	}
 
@@ -353,6 +371,9 @@ public abstract class AbstractHandlerMapping extends WebApplicationObjectSupport
 			if (mappedInterceptor.matches(lookupPath, this.pathMatcher)) {
 				chain.addInterceptor(mappedInterceptor.getInterceptor());
 			}
+		}
+		if(this.corsHandler != null) {
+			chain.addInterceptor(this.corsHandler);
 		}
 
 		return chain;

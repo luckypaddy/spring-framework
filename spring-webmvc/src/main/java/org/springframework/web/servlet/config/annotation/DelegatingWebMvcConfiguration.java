@@ -51,6 +51,11 @@ public class DelegatingWebMvcConfiguration extends WebMvcConfigurationSupport {
 	}
 
 	@Override
+	protected void configureCors(CorsRegistry registry) {
+		this.configurers.configureCors(registry);
+	}
+
+	@Override
 	protected void addInterceptors(InterceptorRegistry registry) {
 		this.configurers.addInterceptors(registry);
 	}

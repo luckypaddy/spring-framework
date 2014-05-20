@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN 2.0//EN" "http://www.springframework.org/dtd/spring-beans-2.0.dtd">
+
+<beans>
+
+	<bean id="sampleUrlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="methods" value="OPTIONS, GET" />
+		<property name="mappings">
+			<value>
+				welcome.html=mainController
+			</value>
+		</property>
+	</bean>
+
+	<bean id="mainController" class="java.lang.Object"/>
+
+</beans>

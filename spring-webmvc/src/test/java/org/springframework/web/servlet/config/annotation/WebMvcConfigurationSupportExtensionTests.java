@@ -18,6 +18,7 @@ package org.springframework.web.servlet.config.annotation;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -55,11 +56,10 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.HandlerExecutionChain;
-import org.springframework.web.servlet.handler.AbstractHandlerMapping;
-import org.springframework.web.servlet.handler.ConversionServiceExposingInterceptor;
-import org.springframework.web.servlet.handler.HandlerExceptionResolverComposite;
-import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
+import org.springframework.web.servlet.handler.*;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
+import org.springframework.web.servlet.cors.CorsConfigSpecification;
+import org.springframework.web.servlet.cors.CorsHandler;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.resource.ResourceUrlProviderExposingInterceptor;
@@ -203,6 +203,21 @@ public class WebMvcConfigurationSupportExtensionTests {
 		assertEquals(1, composite.getExceptionResolvers().size());
 	}
 
+	@Test
+	public void corsHandler() {
+		CorsHandler corsHandler =  webConfig.corsHandler();
+		corsHandler.setApplicationContext(webAppContext);
+		assertNotNull(corsHandler);
+		assertEquals(-1, corsHandler.getOrder());
+		CorsConfigSpecification config =  corsHandler.getUrlConfigMap().get("/**");
+		assertNotNull(config);
+		assertEquals(1, config.getAllowedOrigins().size());
+		assertEquals("*", config.getAllowedOrigins().get(0));
+		assertEquals(2, config.getExposedHeaders().size());
+		assertEquals("Header1", config.getExposedHeaders().get(0));
+		assertEquals("Header2", config.getExposedHeaders().get(1));
+	}
+
 
 	@Controller
 	private static class TestController {
@@ -280,6 +295,12 @@ public class WebMvcConfigurationSupportExtensionTests {
 		@Override
 		public void addInterceptors(InterceptorRegistry registry) {
 			registry.addInterceptor(new LocaleChangeInterceptor());
+		}
+
+		@Override
+		public void configureCors(CorsRegistry registry) {
+			registry.addCorsHandlerMapping().allowedOrigins("*").exposedHeaders("Header1", "Header2")
+					.allowedHeaders("Header1", "Header2").allowedMethods("GET", "POST");
 		}
 
 		@SuppressWarnings("serial")

@@ -122,6 +122,14 @@ public abstract class WebMvcConfigurerAdapter implements WebMvcConfigurer {
 	 * <p>This implementation is empty.
 	 */
 	@Override
+	public void configureCors(CorsRegistry registry) {
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * <p>This implementation is empty.
+	 */
+	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
 	}
 

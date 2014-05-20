@@ -70,6 +70,8 @@ import org.springframework.web.servlet.handler.*;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter;
 import org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter;
+import org.springframework.web.servlet.cors.CorsConfigSpecification;
+import org.springframework.web.servlet.cors.CorsHandler;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
@@ -506,6 +508,86 @@ public class MvcNamespaceTests {
 		DeferredResultProcessingInterceptor[] deferredResultInterceptors =
 				(DeferredResultProcessingInterceptor[]) fieldAccessor.getPropertyValue("deferredResultInterceptors");
 		assertEquals(1, deferredResultInterceptors.length);
+	}
+
+	@Test
+	public void testCorsMinimal() throws Exception {
+		loadBeanDefinitions("mvc-config-cors-minimal.xml", 14);
+
+		RequestMappingHandlerMapping mapping = appContext.getBean(RequestMappingHandlerMapping.class);
+		assertNotNull(mapping);
+		mapping.setDefaultHandler(handlerMethod);
+
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/accounts/12345");
+		HandlerExecutionChain chain = mapping.getHandler(request);
+		assertEquals(2, chain.getInterceptors().length);
+		assertEquals(CorsHandler.class, chain.getInterceptors()[1].getClass());
+		CorsHandler corsHandler = (CorsHandler)chain.getInterceptors()[1];
+		assertNotNull(corsHandler);
+		CorsConfigSpecification config = corsHandler.getUrlConfigMap().get("/**");
+		assertNotNull(config);
+		assertEquals(1, config.getAllowedOrigins().size());
+		assertEquals("*", config.getAllowedOrigins().get(0));
+		assertFalse(config.isAllowCredentials());
+		assertTrue(config.getExposedHeaders().isEmpty());
+
+		corsHandler = appContext.getBean(CorsHandler.class);
+		assertNotNull(corsHandler);
+		config = corsHandler.getUrlConfigMap().get("/**");
+		assertNotNull(config);
+		assertEquals(1, config.getAllowedOrigins().size());
+		assertEquals("*", config.getAllowedOrigins().get(0));
+		assertFalse(config.isAllowCredentials());
+		assertTrue(config.getAllowedHeaders().isEmpty());
+		assertEquals(0, config.getAllowedMethods().size());
+		assertEquals(new Long(31536000), config.getMaxAge());
+	}
+
+	@Test
+	public void testCors() throws Exception {
+		loadBeanDefinitions("mvc-config-cors.xml", 14);
+
+		RequestMappingHandlerMapping mapping = appContext.getBean(RequestMappingHandlerMapping.class);
+		assertNotNull(mapping);
+		mapping.setDefaultHandler(handlerMethod);
+
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/path1/12345");
+		HandlerExecutionChain chain = mapping.getHandler(request);
+		assertEquals(2, chain.getInterceptors().length);
+		assertEquals(CorsHandler.class, chain.getInterceptors()[1].getClass());
+		CorsHandler corsHandler = (CorsHandler)chain.getInterceptors()[1];
+		assertNotNull(corsHandler);
+		CorsConfigSpecification config = corsHandler.getUrlConfigMap().get("/path1/**");
+		assertNotNull(config);
+		assertEquals(2, config.getAllowedOrigins().size());
+		assertEquals("http://domain1.com", config.getAllowedOrigins().get(0));
+		assertEquals("http://domain2.com", config.getAllowedOrigins().get(1));
+		assertTrue(config.isAllowCredentials());
+		assertEquals(2, config.getExposedHeaders().size());
+		assertEquals("Header3", config.getExposedHeaders().get(0));
+		assertEquals("Header4", config.getExposedHeaders().get(1));
+
+		request = new MockHttpServletRequest("GET", "/pathadmin/12345");
+		chain = mapping.getHandler(request);
+		assertEquals(2, chain.getInterceptors().length);
+
+		corsHandler = appContext.getBean(CorsHandler.class);
+		assertNotNull(corsHandler);
+		config = corsHandler.getUrlConfigMap().get("/path1/**");
+		assertNotNull(config);
+		assertEquals(2, config.getAllowedOrigins().size());
+		assertEquals("http://domain1.com", config.getAllowedOrigins().get(0));
+		assertEquals("http://domain2.com", config.getAllowedOrigins().get(1));
+		assertTrue(config.isAllowCredentials());
+		assertEquals(2, config.getAllowedHeaders().size());
+		assertEquals("Header1", config.getAllowedHeaders().get(0));
+		assertEquals("Header2", config.getAllowedHeaders().get(1));
+		assertEquals(2, config.getExposedHeaders().size());
+		assertEquals("Header3", config.getExposedHeaders().get(0));
+		assertEquals("Header4", config.getExposedHeaders().get(1));
+		assertEquals(1, config.getAllowedMethods().size());
+		assertEquals("OPTIONS", config.getAllowedMethods().get(0));
+		assertEquals(new Long(31536000), config.getMaxAge());
 	}
 
 

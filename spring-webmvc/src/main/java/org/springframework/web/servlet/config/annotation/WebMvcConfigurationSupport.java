@@ -65,14 +65,12 @@ import org.springframework.web.method.support.HandlerMethodReturnValueHandler;
 import org.springframework.web.servlet.HandlerAdapter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.servlet.HandlerMapping;
-import org.springframework.web.servlet.handler.AbstractHandlerMapping;
-import org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping;
-import org.springframework.web.servlet.handler.ConversionServiceExposingInterceptor;
-import org.springframework.web.servlet.handler.HandlerExceptionResolverComposite;
+import org.springframework.web.servlet.handler.*;
 import org.springframework.web.servlet.mvc.Controller;
 import org.springframework.web.servlet.mvc.HttpRequestHandlerAdapter;
 import org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter;
 import org.springframework.web.servlet.mvc.annotation.ResponseStatusExceptionResolver;
+import org.springframework.web.servlet.cors.CorsHandler;
 import org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
@@ -236,7 +234,7 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 
 	/**
 	 * Provide access to the shared handler interceptors used to configure
-	 * {@link HandlerMapping} instances with. This method cannot be overridden,
+	 * {@link HandlerMapping} and interceptor instances with. This method cannot be overridden,
 	 * use {@link #addInterceptors(InterceptorRegistry)} instead.
 	 */
 	protected final Object[] getInterceptors() {
@@ -248,6 +246,21 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 			this.interceptors = registry.getInterceptors();
 		}
 		return this.interceptors.toArray();
+	}
+
+	@Bean
+	public CorsHandler corsHandler() {
+		CorsRegistry corsRegistry = new CorsRegistry();
+		configureCors(corsRegistry);
+		return corsRegistry.getCorsHandler();
+	}
+
+	/**
+	 * Override this method to configure Cors request handling
+	 * (both simple and preflight requests)
+	 * @see CorsRegistry
+	 */
+	protected void configureCors(CorsRegistry registry) {
 	}
 
 	/**

@@ -112,6 +112,12 @@ public interface WebMvcConfigurer {
 	void configureHandlerExceptionResolvers(List<HandlerExceptionResolver> exceptionResolvers);
 
 	/**
+	 * Configure CORS request handling by adding simple request interceptor or preflight
+	 * request handler.
+	 */
+	void configureCors(CorsRegistry registry);
+
+	/**
 	 * Add Spring MVC lifecycle interceptors for pre- and post-processing of
 	 * controller method invocations. Interceptors can be registered to apply
 	 * to all requests or be limited to a subset of URL patterns.

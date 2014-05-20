@@ -88,6 +88,26 @@ public class SimpleUrlHandlerMappingTests {
 		assertSame(controller, hec.getHandler());
 	}
 
+	@Test
+	public void requestMethods() throws Exception {
+		MockServletContext sc = new MockServletContext("");
+		XmlWebApplicationContext wac = new XmlWebApplicationContext();
+		wac.setServletContext(sc);
+		wac.setConfigLocations(new String[] {"/org/springframework/web/servlet/handler/map4.xml"});
+		wac.refresh();
+		Object bean = wac.getBean("mainController");
+		HandlerMapping hm = (HandlerMapping) wac.getBean("sampleUrlMapping");
+
+		MockHttpServletRequest req = new MockHttpServletRequest("GET", "/welcome.html");
+		HandlerExecutionChain hec = getHandler(hm, req);
+		assertTrue("Handler is correct bean", hec != null && hec.getHandler() == bean);
+		assertEquals("/welcome.html", req.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE));
+
+		req = new MockHttpServletRequest("PUT", "/welcome.html");
+		hec = getHandler(hm, req);
+		assertNull(hec);
+	}
+
 	private void checkMappings(String beanName) throws Exception {
 		MockServletContext sc = new MockServletContext("");
 		XmlWebApplicationContext wac = new XmlWebApplicationContext();
@@ -155,10 +175,12 @@ public class SimpleUrlHandlerMappingTests {
 
 	private HandlerExecutionChain getHandler(HandlerMapping hm, MockHttpServletRequest req) throws Exception {
 		HandlerExecutionChain hec = hm.getHandler(req);
-		HandlerInterceptor[] interceptors = hec.getInterceptors();
-		if (interceptors != null) {
-			for (HandlerInterceptor interceptor : interceptors) {
-				interceptor.preHandle(req, null, hec.getHandler());
+		if(hec != null) {
+			HandlerInterceptor[] interceptors = hec.getInterceptors();
+			if (interceptors != null) {
+				for (HandlerInterceptor interceptor : interceptors) {
+					interceptor.preHandle(req, null, hec.getHandler());
+				}
 			}
 		}
 		return hec;
