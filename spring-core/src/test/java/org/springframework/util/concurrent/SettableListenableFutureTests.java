@@ -298,7 +298,7 @@ public class SettableListenableFutureTests {
 
 			@Override
 			public void onFailure(Throwable t) {
-				fail("onFailure should not have been called");
+				assertThat(t.getClass(), equalTo(CancellationException.class));
 			}
 		});
 		settableListenableFuture.cancel(true);
@@ -315,7 +315,7 @@ public class SettableListenableFutureTests {
 
 			@Override
 			public void onFailure(Throwable t) {
-				fail("onFailure should not have been called");
+				assertThat(t.getClass(), equalTo(CancellationException.class));
 			}
 		});
 		settableListenableFuture.cancel(true);
