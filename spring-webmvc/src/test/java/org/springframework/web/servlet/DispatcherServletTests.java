@@ -844,6 +844,13 @@ public class DispatcherServletTests extends TestCase {
 		assertEquals("true", servletConfig.getServletContext().getAttribute("otherInitialized"));
 	}
 
+	public void testHandlerInterceptorException() throws Exception {
+		MockHttpServletRequest request = new MockHttpServletRequest(getServletContext(), "GET", "/ex.do");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		complexDispatcherServlet.service(request, response);
+		assertEquals("An exception has been thrown!", response.getContentAsString());
+	}
+
 
 	public static class ControllerFromParent implements Controller {
 

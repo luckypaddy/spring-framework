@@ -39,6 +39,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.context.WebApplicationContext;
@@ -51,6 +52,7 @@ import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.AbstractMultipartHttpServletRequest;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.servlet.handler.SimpleMappingExceptionResolver;
 import org.springframework.web.servlet.handler.SimpleServletHandlerAdapter;
 import org.springframework.web.servlet.handler.SimpleServletPostProcessor;
@@ -111,11 +113,15 @@ public class ComplexWebApplicationContext extends StaticWebApplicationContext {
 		pvs.add("order", "2");
 		registerSingleton("myUrlMapping2", SimpleUrlHandlerMapping.class, pvs);
 
+		interceptors = new ArrayList();
+		interceptors.add(new MyExceptionHandlerInterceptor());
 		pvs = new MutablePropertyValues();
 		pvs.add(
 				"mappings", "/head.do=headController\n" +
-				"body.do=bodyController\n/noview*=noviewController\n/noview/simple*=noviewController");
+				"body.do=bodyController\n/noview*=noviewController\n" +
+				"/noview/simple*=noviewController\n/ex.do=exceptionController");
 		pvs.add("order", "1");
+		pvs.add("interceptors", interceptors);
 		registerSingleton("handlerMapping", SimpleUrlHandlerMapping.class, pvs);
 
 		registerSingleton("myDummyAdapter", MyDummyAdapter.class);
@@ -142,6 +148,7 @@ public class ComplexWebApplicationContext extends StaticWebApplicationContext {
 
 		registerSingleton("headController", HeadController.class);
 		registerSingleton("bodyController", BodyController.class);
+		registerSingleton("exceptionController", ExceptionController.class);
 
 		registerSingleton("servletPostProcessor", SimpleServletPostProcessor.class);
 		registerSingleton("handlerAdapter", SimpleServletHandlerAdapter.class);
@@ -193,6 +200,14 @@ public class ComplexWebApplicationContext extends StaticWebApplicationContext {
 		public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
 			response.getOutputStream().write("body".getBytes());
 			return null;
+		}
+	}
+
+	public static class ExceptionController implements Controller {
+
+		@Override
+		public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
+			throw new IllegalStateException();
 		}
 	}
 
@@ -390,6 +405,18 @@ public class ComplexWebApplicationContext extends StaticWebApplicationContext {
 		@Override
 		public void afterCompletion(WebRequest request, Exception ex) throws Exception {
 			request.setAttribute("test3y", "test3y", WebRequest.SCOPE_REQUEST);
+		}
+	}
+
+	public static class MyExceptionHandlerInterceptor extends HandlerInterceptorAdapter {
+
+		@Override
+		public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
+				Object handler, Exception ex) throws Exception {
+			if(ex != null) {
+				response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+				response.getWriter().write("An exception has been thrown!");
+			}
 		}
 	}
 
