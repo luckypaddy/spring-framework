@@ -27,6 +27,8 @@ import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.util.Assert;
 import org.springframework.web.HttpRequestHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.handler.ExceptionWebSocketHandlerDecorator;
@@ -41,7 +43,7 @@ import org.springframework.web.socket.sockjs.SockJsService;
  * @author Rossen Stoyanchev
  * @since 4.0
  */
-public class SockJsHttpRequestHandler implements HttpRequestHandler {
+public class SockJsHttpRequestHandler implements HttpRequestHandler, CorsConfigurationSource {
 
 	// No logging: HTTP transports too verbose and we don't know enough to log anything of value
 
@@ -100,4 +102,11 @@ public class SockJsHttpRequestHandler implements HttpRequestHandler {
 		return ((path.length() > 0) && (path.charAt(0) != '/')) ? "/" + path : path;
 	}
 
+	@Override
+	public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+		if (sockJsService instanceof CorsConfigurationSource) {
+			return ((CorsConfigurationSource)sockJsService).getCorsConfiguration(request);
+		}
+		return null;
+	}
 }

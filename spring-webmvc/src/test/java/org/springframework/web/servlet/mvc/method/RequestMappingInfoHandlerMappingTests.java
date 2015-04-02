@@ -415,6 +415,10 @@ public class RequestMappingInfoHandlerMappingTests {
 		public void foo() {
 		}
 
+		@RequestMapping(value = "/fooheader", method = RequestMethod.GET, headers = {"Custom-Header"})
+		public void fooHeader() {
+		}
+
 		@RequestMapping(value = "/foo", method = RequestMethod.GET, params="p")
 		public void fooParam() {
 		}

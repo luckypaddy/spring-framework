@@ -208,27 +208,27 @@ public class TransportHandlingSockJsService extends AbstractSockJsService implem
 			return;
 		}
 
-		HttpMethod supportedMethod = transportType.getHttpMethod();
-		if (!supportedMethod.equals(request.getMethod())) {
-			if (HttpMethod.OPTIONS.equals(request.getMethod()) && transportType.supportsCors()) {
-				if (checkAndAddCorsHeaders(request, response, HttpMethod.OPTIONS, supportedMethod)) {
-					response.setStatusCode(HttpStatus.NO_CONTENT);
-					addCacheHeaders(response);
-				}
-			}
-			else if (transportType.supportsCors()) {
-				sendMethodNotAllowed(response, supportedMethod, HttpMethod.OPTIONS);
-			}
-			else {
-				sendMethodNotAllowed(response, supportedMethod);
-			}
-			return;
-		}
-
-		HandshakeInterceptorChain chain = new HandshakeInterceptorChain(this.interceptors, handler);
 		SockJsException failure = null;
+		HandshakeInterceptorChain chain = new HandshakeInterceptorChain(this.interceptors, handler);
 
 		try {
+			HttpMethod supportedMethod = transportType.getHttpMethod();
+			if (!supportedMethod.equals(request.getMethod())) {
+				if (HttpMethod.OPTIONS.equals(request.getMethod()) && transportType.supportsCors()) {
+					if (checkOrigin(request, response, HttpMethod.OPTIONS, supportedMethod)) {
+						response.setStatusCode(HttpStatus.NO_CONTENT);
+						addCacheHeaders(response);
+					}
+				}
+				else if (transportType.supportsCors()) {
+					sendMethodNotAllowed(response, supportedMethod, HttpMethod.OPTIONS);
+				}
+				else {
+					sendMethodNotAllowed(response, supportedMethod);
+				}
+				return;
+			}
+
 			SockJsSession session = this.sessions.get(sessionId);
 			if (session == null) {
 				if (transportHandler instanceof SockJsSessionFactory) {
@@ -264,7 +264,7 @@ public class TransportHandlingSockJsService extends AbstractSockJsService implem
 			}
 
 			if (transportType.supportsCors()) {
-				if (!checkAndAddCorsHeaders(request, response)) {
+				if (!checkOrigin(request, response)) {
 					return;
 				}
 			}

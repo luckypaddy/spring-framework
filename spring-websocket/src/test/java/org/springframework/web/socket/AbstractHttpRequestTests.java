@@ -55,10 +55,6 @@ public abstract class AbstractHttpRequestTests {
 		this.servletRequest.setRequestURI(requestUri);
 	}
 
-	protected void setOrigin(String origin) {
-		this.request.getHeaders().add(HttpHeaders.ORIGIN, origin);
-	}
-
 	protected void resetRequestAndResponse() {
 		resetRequest();
 		resetResponse();
