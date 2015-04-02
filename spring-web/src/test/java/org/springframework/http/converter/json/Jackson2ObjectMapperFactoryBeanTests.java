@@ -28,6 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -51,6 +52,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.module.SimpleSerializers;
 import com.fasterxml.jackson.databind.ser.BasicSerializerFactory;
 import com.fasterxml.jackson.databind.ser.Serializers;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.fasterxml.jackson.databind.ser.std.ClassSerializer;
 import com.fasterxml.jackson.databind.ser.std.NumberSerializer;
 import com.fasterxml.jackson.databind.type.SimpleType;
@@ -125,7 +128,9 @@ public class Jackson2ObjectMapperFactoryBeanTests {
 	@Test
 	public void setNotNullSerializationInclusion() {
 		factory.afterPropertiesSet();
-		assertTrue(factory.getObject().getSerializationConfig().getSerializationInclusion() == JsonInclude.Include.ALWAYS);
+		assertTrue(
+				factory.getObject().getSerializationConfig().getSerializationInclusion() ==
+						JsonInclude.Include.ALWAYS);
 
 		factory.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		factory.afterPropertiesSet();
@@ -229,7 +234,9 @@ public class Jackson2ObjectMapperFactoryBeanTests {
 		ObjectMapper objectMapper = this.factory.getObject();
 
 		Serializers serializers = getSerializerFactoryConfig(objectMapper).serializers().iterator().next();
-		assertTrue(serializers.findSerializer(null, SimpleType.construct(Integer.class), null) == serializer1);
+		assertTrue(
+				serializers.findSerializer(null, SimpleType.construct(Integer.class), null) ==
+						serializer1);
 	}
 
 	@Test
@@ -312,6 +319,18 @@ public class Jackson2ObjectMapperFactoryBeanTests {
 
 		assertEquals(1, objectMapper.mixInCount());
 		assertSame(mixinSource, objectMapper.findMixInClassFor(target));
+	}
+
+	@Test
+	public void filters() throws JsonProcessingException {
+		this.factory.setFilters(new SimpleFilterProvider().setFailOnUnknownId(false));
+		this.factory.afterPropertiesSet();
+		ObjectMapper objectMapper = this.factory.getObject();
+
+		JacksonFilteredBean bean = new JacksonFilteredBean("value1", "value2");
+		String output = objectMapper.writeValueAsString(bean);
+		assertThat(output, containsString("value1"));
+		assertThat(output, containsString("value2"));
 	}
 
 	@Test
@@ -426,6 +445,38 @@ public class Jackson2ObjectMapperFactoryBeanTests {
 			gen.writeStartObject();
 			gen.writeNumberField("customid", value);
 			gen.writeEndObject();
+		}
+	}
+
+
+	@JsonFilter("myJacksonFilter")
+	public static class JacksonFilteredBean {
+
+		public JacksonFilteredBean() {
+		}
+
+		public JacksonFilteredBean(String property1, String property2) {
+			this.property1 = property1;
+			this.property2 = property2;
+		}
+
+		private String property1;
+		private String property2;
+
+		public String getProperty1() {
+			return property1;
+		}
+
+		public void setProperty1(String property1) {
+			this.property1 = property1;
+		}
+
+		public String getProperty2() {
+			return property2;
+		}
+
+		public void setProperty2(String property2) {
+			this.property2 = property2;
 		}
 	}
 
