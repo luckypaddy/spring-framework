@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.HttpHeaders;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.context.support.StaticWebApplicationContext;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.mock.web.test.MockHttpServletRequest;
@@ -103,7 +104,7 @@ public class CrossOriginTests {
 		assertArrayEquals(new String[]{"*"}, config.getAllowedOrigins().toArray());
 		assertTrue(config.getAllowCredentials());
 		assertArrayEquals(new String[]{"*"}, config.getAllowedHeaders().toArray());
-		assertNull(config.getExposedHeaders());
+		assertTrue(CollectionUtils.isEmpty(config.getExposedHeaders()));
 		assertEquals(new Long(1800), config.getMaxAge());
 	}
 
@@ -146,7 +147,7 @@ public class CrossOriginTests {
 		assertArrayEquals(new String[]{"*"}, config.getAllowedOrigins().toArray());
 		assertTrue(config.getAllowCredentials());
 		assertArrayEquals(new String[]{"*"}, config.getAllowedHeaders().toArray());
-		assertNull(config.getExposedHeaders());
+		assertTrue(CollectionUtils.isEmpty(config.getExposedHeaders()));
 		assertEquals(new Long(1800), config.getMaxAge());
 	}
 
@@ -164,7 +165,7 @@ public class CrossOriginTests {
 		assertArrayEquals(new String[]{"*"}, config.getAllowedOrigins().toArray());
 		assertArrayEquals(new String[]{"*"}, config.getAllowedHeaders().toArray());
 		assertTrue(config.getAllowCredentials());
-		assertNull(config.getExposedHeaders());
+		assertTrue(CollectionUtils.isEmpty(config.getExposedHeaders()));
 		assertNull(config.getMaxAge());
 	}
 
@@ -181,7 +182,7 @@ public class CrossOriginTests {
 		assertArrayEquals(new String[]{"*"}, config.getAllowedOrigins().toArray());
 		assertArrayEquals(new String[]{"*"}, config.getAllowedHeaders().toArray());
 		assertTrue(config.getAllowCredentials());
-		assertNull(config.getExposedHeaders());
+		assertTrue(CollectionUtils.isEmpty(config.getExposedHeaders()));
 		assertNull(config.getMaxAge());
 	}
 

@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 
 /**
@@ -57,8 +56,7 @@ public class CorsConfiguration {
 
 	/**
 	 * Configure origins to allow, e.g. "http://domain1.com". The special value
-	 * "*" allows all domains but that can only be used when credentials are not
-	 * supported (i.e. {@link #setAllowCredentials} is {@code false} or not set.
+	 * "*" allows all domains.
 	 * <p>By default this is not set.
 	 */
 	public void setAllowedOrigins(List<String> origins) {
@@ -203,15 +201,19 @@ public class CorsConfiguration {
 	 * means the request origin is not allowed.
 	 */
 	public String checkOrigin(String requestOrigin) {
-		if (this.allowedOrigins == null || requestOrigin == null) {
+		if (requestOrigin == null) {
 			return null;
 		}
-		if (this.allowedOrigins.contains("*")) {
+		List<String> allowedOrigins = this.allowedOrigins == null ?
+				new ArrayList<String>() : this.allowedOrigins;
+		if (allowedOrigins.contains("*")) {
 			if (this.allowCredentials == null || !this.allowCredentials) {
 				return "*";
+			} else {
+				return requestOrigin;
 			}
 		}
-		for (String allowedOrigin : this.allowedOrigins) {
+		for (String allowedOrigin : allowedOrigins) {
 			if (requestOrigin.equalsIgnoreCase(allowedOrigin)) {
 				return requestOrigin;
 			}
@@ -228,20 +230,26 @@ public class CorsConfiguration {
 	 * request, or {@code null} if the requestMethod is not allowed.
 	 */
 	public List<HttpMethod> checkHttpMethod(HttpMethod requestMethod) {
-		if (this.allowedMethods == null) {
+		if (requestMethod == null) {
 			return null;
 		}
-		if (this.allowedMethods.contains("*")) {
+		List<String> allowedMethods = this.allowedMethods == null ?
+				new ArrayList<String>() : this.allowedMethods;
+		if (allowedMethods.contains("*")) {
 			return Arrays.asList(requestMethod);
 		}
-		List<HttpMethod> result = new ArrayList<HttpMethod>(this.allowedMethods.size());
-		for (String method : this.allowedMethods) {
-			if (!method.equals(requestMethod.name())) {
-				return null;
+		if (allowedMethods.isEmpty()) {
+			allowedMethods.add(HttpMethod.GET.name());
+		}
+		List<HttpMethod> result = new ArrayList<HttpMethod>(allowedMethods.size());
+		boolean allowed = false;
+		for (String method : allowedMethods) {
+			if (method.equals(requestMethod.name())) {
+				allowed = true;
 			}
 			result.add(HttpMethod.valueOf(method));
 		}
-		return result;
+		return allowed ? result : null;
 	}
 
 	/**
@@ -253,25 +261,26 @@ public class CorsConfiguration {
 	 * request, or {@code null} if a requestHeader is not allowed.
 	 */
 	public List<String> checkHeaders(List<String> requestHeaders) {
-		if (this.allowedHeaders == null) {
+		if (requestHeaders == null) {
 			return null;
 		}
-		if (this.allowedHeaders.isEmpty()) {
+		if (requestHeaders.isEmpty()) {
 			return Collections.emptyList();
 		}
-		boolean allowAnyHeader = this.allowedHeaders.contains("*");
+		List<String> allowedHeaders = this.allowedHeaders == null ?
+				new ArrayList<String>() : this.allowedHeaders;
+		boolean allowAnyHeader = allowedHeaders.contains("*");
 		List<String> result = new ArrayList<String>();
 		for (String requestHeader : requestHeaders) {
 			requestHeader = requestHeader.trim();
-			boolean isOriginHeader = HttpHeaders.ORIGIN.equals(requestHeader);
-			for (String allowedHeader : this.allowedHeaders) {
-				if (allowAnyHeader || isOriginHeader || requestHeader.equalsIgnoreCase(allowedHeader)) {
+			for (String allowedHeader : allowedHeaders) {
+				if (allowAnyHeader || requestHeader.equalsIgnoreCase(allowedHeader)) {
 					result.add(requestHeader);
 					break;
 				}
 			}
 		}
-		return result;
+		return result.isEmpty() ? null : result;
 	}
 
 }

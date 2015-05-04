@@ -85,7 +85,7 @@ public class DefaultCorsProcessor implements CorsProcessor {
 		}
 
 		ServletServerHttpRequest serverRequest = new ServletServerHttpRequest(request);
-		if (handleInternal(serverRequest, serverResponse, config, true)) {
+		if (handleInternal(serverRequest, serverResponse, config, false)) {
 			serverResponse.flush();
 			return true;
 		}
@@ -119,7 +119,7 @@ public class DefaultCorsProcessor implements CorsProcessor {
 		List<String> requestHeaders = getHeadersToUse(request, isPreFlight);
 		List<String> allowHeaders = checkHeaders(config, requestHeaders);
 
-		if (allowOrigin == null || allowMethods == null || allowHeaders == null) {
+		if (allowOrigin == null || allowMethods == null || (isPreFlight && allowHeaders == null)) {
 			handleInvalidCorsRequest(response);
 			return false;
 		}
@@ -140,7 +140,7 @@ public class DefaultCorsProcessor implements CorsProcessor {
 			responseHeaders.setAccessControlExposeHeaders(config.getExposedHeaders());
 		}
 
-		if (config.getAllowCredentials() != null && config.getAllowCredentials()) {
+		if (Boolean.TRUE.equals(config.getAllowCredentials())) {
 			responseHeaders.setAccessControlAllowCredentials(true);
 		}
 
