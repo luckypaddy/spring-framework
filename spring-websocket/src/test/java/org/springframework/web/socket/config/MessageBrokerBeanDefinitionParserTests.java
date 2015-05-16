@@ -45,6 +45,7 @@ import org.springframework.messaging.converter.DefaultContentTypeResolver;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
+import org.springframework.messaging.handler.HandlerMethod;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 import org.springframework.messaging.handler.invocation.HandlerMethodReturnValueHandler;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -481,7 +482,7 @@ class CustomReturnValueHandler implements HandlerMethodReturnValueHandler {
 	}
 
 	@Override
-	public void handleReturnValue(Object returnValue, MethodParameter returnType, Message<?> message) throws Exception {
+	public void handleReturnValue(Object returnValue, HandlerMethod handlerMethod, Message<?> message) throws Exception {
 
 	}
 }

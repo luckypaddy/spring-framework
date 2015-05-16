@@ -39,7 +39,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import org.springframework.core.MethodParameter;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
@@ -47,6 +46,7 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.handler.DestinationPatternsMessageCondition;
+import org.springframework.messaging.handler.HandlerMethod;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
@@ -80,15 +80,15 @@ public class SendToMethodReturnValueHandlerTests {
 
 	@Captor private ArgumentCaptor<Message<?>> messageCaptor;
 
-	private MethodParameter noAnnotationsReturnType;
-	private MethodParameter sendToReturnType;
-	private MethodParameter sendToDefaultDestReturnType;
-	private MethodParameter sendToWithPlaceholdersReturnType;
-	private MethodParameter sendToUserReturnType;
-	private MethodParameter sendToUserSingleSessionReturnType;
-	private MethodParameter sendToUserDefaultDestReturnType;
-	private MethodParameter sendToUserSingleSessionDefaultDestReturnType;
-	private MethodParameter jsonViewReturnType;
+	private HandlerMethod noAnnotationsHandlerMethod;
+	private HandlerMethod sendToHandlerMethod;
+	private HandlerMethod sendToDefaultDestHandlerMethod;
+	private HandlerMethod sendToWithPlaceholdersHandlerMethod;
+	private HandlerMethod sendToUserHandlerMethod;
+	private HandlerMethod sendToUserSingleSessionHandlerMethod;
+	private HandlerMethod sendToUserDefaultDestHandlerMethod;
+	private HandlerMethod sendToUserSingleSessionDefaultDestHandlerMethod;
+	private HandlerMethod jsonViewHandlerMethod;
 
 
 	@Before
@@ -106,40 +106,40 @@ public class SendToMethodReturnValueHandlerTests {
 		this.jsonHandler = new SendToMethodReturnValueHandler(jsonMessagingTemplate, true);
 
 		Method method = this.getClass().getDeclaredMethod("handleNoAnnotations");
-		this.noAnnotationsReturnType = new MethodParameter(method, -1);
+		this.noAnnotationsHandlerMethod = new HandlerMethod(this, method);
 
 		method = this.getClass().getDeclaredMethod("handleAndSendToDefaultDestination");
-		this.sendToDefaultDestReturnType = new MethodParameter(method, -1);
+		this.sendToDefaultDestHandlerMethod = new HandlerMethod(this, method);
 
 		method = this.getClass().getDeclaredMethod("handleAndSendTo");
-		this.sendToReturnType = new MethodParameter(method, -1);
+		this.sendToHandlerMethod = new HandlerMethod(this, method);
 
 		method = this.getClass().getDeclaredMethod("handleAndSendToWithPlaceholders");
-		this.sendToWithPlaceholdersReturnType = new MethodParameter(method, -1);
+		this.sendToWithPlaceholdersHandlerMethod = new HandlerMethod(this, method);
 
 		method = this.getClass().getDeclaredMethod("handleAndSendToUser");
-		this.sendToUserReturnType = new MethodParameter(method, -1);
+		this.sendToUserHandlerMethod = new HandlerMethod(this, method);
 
 		method = this.getClass().getDeclaredMethod("handleAndSendToUserSingleSession");
-		this.sendToUserSingleSessionReturnType = new MethodParameter(method, -1);
+		this.sendToUserSingleSessionHandlerMethod = new HandlerMethod(this, method);
 
 		method = this.getClass().getDeclaredMethod("handleAndSendToUserDefaultDestination");
-		this.sendToUserDefaultDestReturnType = new MethodParameter(method, -1);
+		this.sendToUserDefaultDestHandlerMethod = new HandlerMethod(this, method);
 
 		method = this.getClass().getDeclaredMethod("handleAndSendToUserDefaultDestinationSingleSession");
-		this.sendToUserSingleSessionDefaultDestReturnType = new MethodParameter(method, -1);
+		this.sendToUserSingleSessionDefaultDestHandlerMethod = new HandlerMethod(this, method);
 
 		method = this.getClass().getDeclaredMethod("handleAndSendToJsonView");
-		this.jsonViewReturnType = new MethodParameter(method, -1);
+		this.jsonViewHandlerMethod = new HandlerMethod(this, method);
 	}
 
 
 	@Test
 	public void supportsReturnType() throws Exception {
-		assertTrue(this.handler.supportsReturnType(this.sendToReturnType));
-		assertTrue(this.handler.supportsReturnType(this.sendToUserReturnType));
-		assertFalse(this.handler.supportsReturnType(this.noAnnotationsReturnType));
-		assertTrue(this.handlerAnnotationNotRequired.supportsReturnType(this.noAnnotationsReturnType));
+		assertTrue(this.handler.supportsReturnType(this.sendToHandlerMethod.getReturnType()));
+		assertTrue(this.handler.supportsReturnType(this.sendToUserHandlerMethod.getReturnType()));
+		assertFalse(this.handler.supportsReturnType(this.noAnnotationsHandlerMethod.getReturnType()));
+		assertTrue(this.handlerAnnotationNotRequired.supportsReturnType(this.noAnnotationsHandlerMethod.getReturnType()));
 	}
 
 	@Test
@@ -148,7 +148,7 @@ public class SendToMethodReturnValueHandlerTests {
 		given(this.messageChannel.send(any(Message.class))).willReturn(true);
 
 		Message<?> inputMessage = createInputMessage("sess1", "sub1", "/app", "/dest", null);
-		this.handler.handleReturnValue(PAYLOAD, this.noAnnotationsReturnType, inputMessage);
+		this.handler.handleReturnValue(PAYLOAD, this.noAnnotationsHandlerMethod, inputMessage);
 
 		verify(this.messageChannel, times(1)).send(this.messageCaptor.capture());
 
@@ -157,7 +157,7 @@ public class SendToMethodReturnValueHandlerTests {
 		assertEquals("/topic/dest", accessor.getDestination());
 		assertEquals(MIME_TYPE, accessor.getContentType());
 		assertNull("Subscription id should not be copied", accessor.getSubscriptionId());
-		assertEquals(this.noAnnotationsReturnType, accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
+		assertEquals(this.noAnnotationsHandlerMethod.getReturnType(), accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
 	}
 
 	@Test
@@ -167,7 +167,7 @@ public class SendToMethodReturnValueHandlerTests {
 
 		String sessionId = "sess1";
 		Message<?> inputMessage = createInputMessage(sessionId, "sub1", null, null, null);
-		this.handler.handleReturnValue(PAYLOAD, this.sendToReturnType, inputMessage);
+		this.handler.handleReturnValue(PAYLOAD, this.sendToHandlerMethod, inputMessage);
 
 		verify(this.messageChannel, times(2)).send(this.messageCaptor.capture());
 
@@ -176,14 +176,14 @@ public class SendToMethodReturnValueHandlerTests {
 		assertEquals("/dest1", accessor.getDestination());
 		assertEquals(MIME_TYPE, accessor.getContentType());
 		assertNull("Subscription id should not be copied", accessor.getSubscriptionId());
-		assertEquals(this.sendToReturnType, accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
+		assertEquals(this.sendToHandlerMethod.getReturnType(), accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
 
 		accessor = getCapturedAccessor(1);
 		assertEquals(sessionId, accessor.getSessionId());
 		assertEquals("/dest2", accessor.getDestination());
 		assertEquals(MIME_TYPE, accessor.getContentType());
 		assertNull("Subscription id should not be copied", accessor.getSubscriptionId());
-		assertEquals(this.sendToReturnType, accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
+		assertEquals(this.sendToHandlerMethod.getReturnType(), accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
 	}
 
 	@Test
@@ -193,7 +193,7 @@ public class SendToMethodReturnValueHandlerTests {
 
 		String sessionId = "sess1";
 		Message<?> inputMessage = createInputMessage(sessionId, "sub1", "/app", "/dest", null);
-		this.handler.handleReturnValue(PAYLOAD, this.sendToDefaultDestReturnType, inputMessage);
+		this.handler.handleReturnValue(PAYLOAD, this.sendToDefaultDestHandlerMethod, inputMessage);
 
 		verify(this.messageChannel, times(1)).send(this.messageCaptor.capture());
 
@@ -202,7 +202,7 @@ public class SendToMethodReturnValueHandlerTests {
 		assertEquals("/topic/dest", accessor.getDestination());
 		assertEquals(MIME_TYPE, accessor.getContentType());
 		assertNull("Subscription id should not be copied", accessor.getSubscriptionId());
-		assertEquals(this.sendToDefaultDestReturnType, accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
+		assertEquals(this.sendToDefaultDestHandlerMethod.getReturnType(), accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
 	}
 
 	@Test
@@ -211,7 +211,7 @@ public class SendToMethodReturnValueHandlerTests {
 		given(this.messageChannel.send(any(Message.class))).willReturn(true);
 
 		Message<?> inputMessage = createInputMessage("sess1", "sub1", "/app/", "dest.foo.bar", null);
-		this.handler.handleReturnValue(PAYLOAD, this.sendToDefaultDestReturnType, inputMessage);
+		this.handler.handleReturnValue(PAYLOAD, this.sendToDefaultDestHandlerMethod, inputMessage);
 
 		verify(this.messageChannel, times(1)).send(this.messageCaptor.capture());
 
@@ -227,7 +227,7 @@ public class SendToMethodReturnValueHandlerTests {
 		SimpMessageSendingOperations messagingTemplate = Mockito.mock(SimpMessageSendingOperations.class);
 		SendToMethodReturnValueHandler handler = new SendToMethodReturnValueHandler(messagingTemplate, false);
 
-		handler.handleReturnValue(PAYLOAD, this.noAnnotationsReturnType, inputMessage);
+		handler.handleReturnValue(PAYLOAD, this.noAnnotationsHandlerMethod, inputMessage);
 
 		ArgumentCaptor<MessageHeaders> captor = ArgumentCaptor.forClass(MessageHeaders.class);
 		verify(messagingTemplate).convertAndSend(eq("/topic/dest"), eq(PAYLOAD), captor.capture());
@@ -238,7 +238,7 @@ public class SendToMethodReturnValueHandlerTests {
 		assertTrue(accessor.isMutable());
 		assertEquals("sess1", accessor.getSessionId());
 		assertNull("Subscription id should not be copied", accessor.getSubscriptionId());
-		assertEquals(this.noAnnotationsReturnType, accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
+		assertEquals(this.noAnnotationsHandlerMethod.getReturnType(), accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
 	}
 
 	@Test
@@ -249,7 +249,7 @@ public class SendToMethodReturnValueHandlerTests {
 		String sessionId = "sess1";
 		TestUser user = new TestUser();
 		Message<?> inputMessage = createInputMessage(sessionId, "sub1", null, null, user);
-		this.handler.handleReturnValue(PAYLOAD, this.sendToUserReturnType, inputMessage);
+		this.handler.handleReturnValue(PAYLOAD, this.sendToUserHandlerMethod, inputMessage);
 
 		verify(this.messageChannel, times(2)).send(this.messageCaptor.capture());
 
@@ -280,7 +280,7 @@ public class SendToMethodReturnValueHandlerTests {
 		accessor.setSubscriptionId("sub1");
 		accessor.setHeader(DESTINATION_TEMPLATE_VARIABLES_HEADER, vars);
 		Message<?> message = MessageBuilder.createMessage(PAYLOAD, accessor.getMessageHeaders());
-		this.handler.handleReturnValue(PAYLOAD, this.sendToWithPlaceholdersReturnType, message);
+		this.handler.handleReturnValue(PAYLOAD, this.sendToWithPlaceholdersHandlerMethod, message);
 
 		verify(this.messageChannel, times(1)).send(this.messageCaptor.capture());
 
@@ -297,7 +297,7 @@ public class SendToMethodReturnValueHandlerTests {
 		String sessionId = "sess1";
 		TestUser user = new TestUser();
 		Message<?> inputMessage = createInputMessage(sessionId, "sub1", null, null, user);
-		this.handler.handleReturnValue(PAYLOAD, this.sendToUserSingleSessionReturnType, inputMessage);
+		this.handler.handleReturnValue(PAYLOAD, this.sendToUserSingleSessionHandlerMethod, inputMessage);
 
 		verify(this.messageChannel, times(2)).send(this.messageCaptor.capture());
 
@@ -306,14 +306,14 @@ public class SendToMethodReturnValueHandlerTests {
 		assertEquals(MIME_TYPE, accessor.getContentType());
 		assertEquals("/user/" + user.getName() + "/dest1", accessor.getDestination());
 		assertNull("Subscription id should not be copied", accessor.getSubscriptionId());
-		assertEquals(this.sendToUserSingleSessionReturnType, accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
+		assertEquals(this.sendToUserSingleSessionHandlerMethod.getReturnType(), accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
 
 		accessor = getCapturedAccessor(1);
 		assertEquals(sessionId, accessor.getSessionId());
 		assertEquals("/user/" + user.getName() + "/dest2", accessor.getDestination());
 		assertEquals(MIME_TYPE, accessor.getContentType());
 		assertNull("Subscription id should not be copied", accessor.getSubscriptionId());
-		assertEquals(this.sendToUserSingleSessionReturnType, accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
+		assertEquals(this.sendToUserSingleSessionHandlerMethod.getReturnType(), accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
 	}
 
 	@Test
@@ -324,7 +324,7 @@ public class SendToMethodReturnValueHandlerTests {
 		String sessionId = "sess1";
 		TestUser user = new UniqueUser();
 		Message<?> inputMessage = createInputMessage(sessionId, "sub1", null, null, user);
-		this.handler.handleReturnValue(PAYLOAD, this.sendToUserReturnType, inputMessage);
+		this.handler.handleReturnValue(PAYLOAD, this.sendToUserHandlerMethod, inputMessage);
 
 		verify(this.messageChannel, times(2)).send(this.messageCaptor.capture());
 
@@ -343,7 +343,7 @@ public class SendToMethodReturnValueHandlerTests {
 		String sessionId = "sess1";
 		TestUser user = new TestUser();
 		Message<?> inputMessage = createInputMessage(sessionId, "sub1", "/app", "/dest", user);
-		this.handler.handleReturnValue(PAYLOAD, this.sendToUserDefaultDestReturnType, inputMessage);
+		this.handler.handleReturnValue(PAYLOAD, this.sendToUserDefaultDestHandlerMethod, inputMessage);
 
 		verify(this.messageChannel, times(1)).send(this.messageCaptor.capture());
 
@@ -360,7 +360,7 @@ public class SendToMethodReturnValueHandlerTests {
 
 		TestUser user = new TestUser();
 		Message<?> inputMessage = createInputMessage("sess1", "sub1", "/app/", "dest.foo.bar", user);
-		this.handler.handleReturnValue(PAYLOAD, this.sendToUserDefaultDestReturnType, inputMessage);
+		this.handler.handleReturnValue(PAYLOAD, this.sendToUserDefaultDestHandlerMethod, inputMessage);
 
 		verify(this.messageChannel, times(1)).send(this.messageCaptor.capture());
 
@@ -376,7 +376,7 @@ public class SendToMethodReturnValueHandlerTests {
 		String sessionId = "sess1";
 		TestUser user = new TestUser();
 		Message<?> inputMessage = createInputMessage(sessionId, "sub1", "/app", "/dest", user);
-		this.handler.handleReturnValue(PAYLOAD, this.sendToUserSingleSessionDefaultDestReturnType, inputMessage);
+		this.handler.handleReturnValue(PAYLOAD, this.sendToUserSingleSessionDefaultDestHandlerMethod, inputMessage);
 
 		verify(this.messageChannel, times(1)).send(this.messageCaptor.capture());
 
@@ -385,7 +385,7 @@ public class SendToMethodReturnValueHandlerTests {
 		assertEquals("/user/" + user.getName() + "/queue/dest", accessor.getDestination());
 		assertEquals(MIME_TYPE, accessor.getContentType());
 		assertNull("Subscription id should not be copied", accessor.getSubscriptionId());
-		assertEquals(this.sendToUserSingleSessionDefaultDestReturnType, accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
+		assertEquals(this.sendToUserSingleSessionDefaultDestHandlerMethod.getReturnType(), accessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
 	}
 
 	@Test
@@ -395,7 +395,7 @@ public class SendToMethodReturnValueHandlerTests {
 
 		String sessionId = "sess1";
 		Message<?> inputMessage = createInputMessage(sessionId, "sub1", null, null, null);
-		this.handler.handleReturnValue(PAYLOAD, this.sendToUserReturnType, inputMessage);
+		this.handler.handleReturnValue(PAYLOAD, this.sendToUserHandlerMethod, inputMessage);
 
 		verify(this.messageChannel, times(2)).send(this.messageCaptor.capture());
 
@@ -415,7 +415,7 @@ public class SendToMethodReturnValueHandlerTests {
 
 		String sessionId = "sess1";
 		Message<?> inputMessage = createInputMessage(sessionId, "sub1", "/app", "/dest", null);
-		this.jsonHandler.handleReturnValue(handleAndSendToJsonView(), this.jsonViewReturnType, inputMessage);
+		this.jsonHandler.handleReturnValue(handleAndSendToJsonView(), this.jsonViewHandlerMethod, inputMessage);
 
 		verify(this.messageChannel).send(this.messageCaptor.capture());
 		Message<?> message = this.messageCaptor.getValue();

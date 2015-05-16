@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.springframework.core.MethodParameter;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.handler.HandlerMethod;
 import org.springframework.util.Assert;
 
 /**
@@ -89,15 +90,16 @@ public class HandlerMethodReturnValueHandlerComposite implements HandlerMethodRe
 	}
 
 	@Override
-	public void handleReturnValue(Object returnValue, MethodParameter returnType, Message<?> message)
+	public void handleReturnValue(Object returnValue, HandlerMethod handlerMethod, Message<?> message)
 			throws Exception {
 
+		MethodParameter returnType = handlerMethod.getReturnType();
 		HandlerMethodReturnValueHandler handler = getReturnValueHandler(returnType);
 		Assert.notNull(handler, "No handler for return value type [" + returnType.getParameterType().getName() + "]");
 		if (logger.isTraceEnabled()) {
 			logger.trace("Processing return value with " + handler);
 		}
-		handler.handleReturnValue(returnValue, returnType, message);
+		handler.handleReturnValue(returnValue, handlerMethod, message);
 	}
 
 }

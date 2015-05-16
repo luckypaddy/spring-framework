@@ -63,7 +63,7 @@ import org.springframework.util.ReflectionUtils;
  * {@link org.springframework.messaging.handler.HandlerMethod} to incoming messages
  */
 public abstract class AbstractMethodMessageHandler<T>
-		implements MessageHandler, ApplicationContextAware, InitializingBean {
+		implements MessageHandler, HandlerMethodExceptionProcessor, ApplicationContextAware, InitializingBean {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
@@ -75,7 +75,7 @@ public abstract class AbstractMethodMessageHandler<T>
 
 	private HandlerMethodArgumentResolverComposite argumentResolvers = new HandlerMethodArgumentResolverComposite();
 
-	private HandlerMethodReturnValueHandlerComposite returnValueHandlers =new HandlerMethodReturnValueHandlerComposite();
+	private HandlerMethodReturnValueHandlerComposite returnValueHandlers = new HandlerMethodReturnValueHandlerComposite();
 
 	private ApplicationContext applicationContext;
 
@@ -462,7 +462,7 @@ public abstract class AbstractMethodMessageHandler<T>
 			if (void.class.equals(returnType.getParameterType())) {
 				return;
 			}
-			this.returnValueHandlers.handleReturnValue(returnValue, returnType, message);
+			this.returnValueHandlers.handleReturnValue(returnValue, handlerMethod, message);
 		}
 		catch (Exception ex) {
 			processHandlerMethodException(handlerMethod, ex, message);
@@ -472,7 +472,8 @@ public abstract class AbstractMethodMessageHandler<T>
 		}
 	}
 
-	protected void processHandlerMethodException(HandlerMethod handlerMethod, Exception ex, Message<?> message) {
+	@Override
+	public void processHandlerMethodException(HandlerMethod handlerMethod, Exception ex, Message<?> message) {
 		InvocableHandlerMethod invocable = getExceptionHandlerMethod(handlerMethod, ex);
 		if (invocable == null) {
 			logger.error("Unhandled exception", ex);
@@ -488,7 +489,7 @@ public abstract class AbstractMethodMessageHandler<T>
 			if (void.class.equals(returnType.getParameterType())) {
 				return;
 			}
-			this.returnValueHandlers.handleReturnValue(returnValue, returnType, message);
+			this.returnValueHandlers.handleReturnValue(returnValue, invocable, message);
 		}
 		catch (Throwable ex2) {
 			logger.error("Error while processing handler method exception", ex2);

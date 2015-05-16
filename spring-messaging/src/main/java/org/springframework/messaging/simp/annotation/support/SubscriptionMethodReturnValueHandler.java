@@ -24,6 +24,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.core.MessageSendingOperations;
+import org.springframework.messaging.handler.HandlerMethod;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.handler.invocation.HandlerMethodReturnValueHandler;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -94,11 +95,12 @@ public class SubscriptionMethodReturnValueHandler implements HandlerMethodReturn
 	}
 
 	@Override
-	public void handleReturnValue(Object returnValue, MethodParameter returnType, Message<?> message) throws Exception {
+	public void handleReturnValue(Object returnValue, HandlerMethod handlerMethod, Message<?> message) throws Exception {
 		if (returnValue == null) {
 			return;
 		}
 
+		MethodParameter returnType = handlerMethod.getReturnType();
 		MessageHeaders headers = message.getHeaders();
 		String destination = SimpMessageHeaderAccessor.getDestination(headers);
 		String sessionId = SimpMessageHeaderAccessor.getSessionId(headers);

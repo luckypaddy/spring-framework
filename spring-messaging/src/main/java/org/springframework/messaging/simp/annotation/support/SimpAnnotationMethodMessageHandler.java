@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,10 +77,14 @@ import org.springframework.validation.Validator;
  *
  * @author Rossen Stoyanchev
  * @author Brian Clozel
+ * @author Sebastien Deleuze
  * @since 4.0
  */
 public class SimpAnnotationMethodMessageHandler extends AbstractMethodMessageHandler<SimpMessageMappingInfo>
 		implements SmartLifecycle {
+
+	private static final boolean completableFuturePresent = ClassUtils.isPresent("java.util.concurrent.CompletableFuture",
+			SimpAnnotationMethodMessageHandler.class.getClassLoader());
 
 	private final SubscribableChannel clientInboundChannel;
 
@@ -313,6 +317,15 @@ public class SimpAnnotationMethodMessageHandler extends AbstractMethodMessageHan
 	@Override
 	protected List<? extends HandlerMethodReturnValueHandler> initReturnValueHandlers() {
 		List<HandlerMethodReturnValueHandler> handlers = new ArrayList<HandlerMethodReturnValueHandler>();
+
+		// async
+		ListenableFutureMethodReturnValueHandler lfh = new ListenableFutureMethodReturnValueHandler(this.getReturnValueHandlers(), this);
+		handlers.add(lfh);
+
+		if (completableFuturePresent) {
+			CompletableFutureMethodReturnValueHandler csh = new CompletableFutureMethodReturnValueHandler(this.getReturnValueHandlers(), this);
+			handlers.add(csh);
+		}
 
 		// Annotation-based return value types
 		SendToMethodReturnValueHandler sth = new SendToMethodReturnValueHandler(this.brokerTemplate, true);

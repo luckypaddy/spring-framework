@@ -30,7 +30,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import org.springframework.core.MethodParameter;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
@@ -38,6 +37,7 @@ import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.core.MessageSendingOperations;
+import org.springframework.messaging.handler.HandlerMethod;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -71,13 +71,13 @@ public class SubscriptionMethodReturnValueHandlerTests {
 
 	@Captor private ArgumentCaptor<Message<?>> messageCaptor;
 
-	private MethodParameter subscribeEventReturnType;
+	private HandlerMethod subscribeEventHandlerMethod;
 
-	private MethodParameter subscribeEventSendToReturnType;
+	private HandlerMethod subscribeEventSendToHandlerMethod;
 
-	private MethodParameter messageMappingReturnType;
+	private HandlerMethod messageMappingHandlerMethod;
 
-	private MethodParameter subscribeEventJsonViewReturnType;
+	private HandlerMethod subscribeEventJsonViewHandlerMethod;
 
 
 	@Before
@@ -94,24 +94,24 @@ public class SubscriptionMethodReturnValueHandlerTests {
 		this.jsonHandler = new SubscriptionMethodReturnValueHandler(jsonMessagingTemplate);
 
 		Method method = this.getClass().getDeclaredMethod("getData");
-		this.subscribeEventReturnType = new MethodParameter(method, -1);
+		this.subscribeEventHandlerMethod = new HandlerMethod(this, method);
 
 		method = this.getClass().getDeclaredMethod("getDataAndSendTo");
-		this.subscribeEventSendToReturnType = new MethodParameter(method, -1);
+		this.subscribeEventSendToHandlerMethod = new HandlerMethod(this, method);
 
 		method = this.getClass().getDeclaredMethod("handle");
-		this.messageMappingReturnType = new MethodParameter(method, -1);
+		this.messageMappingHandlerMethod = new HandlerMethod(this, method);
 
 		method = this.getClass().getDeclaredMethod("getJsonView");
-		this.subscribeEventJsonViewReturnType = new MethodParameter(method, -1);
+		this.subscribeEventJsonViewHandlerMethod = new HandlerMethod(this, method);
 	}
 
 
 	@Test
 	public void supportsReturnType() throws Exception {
-		assertTrue(this.handler.supportsReturnType(this.subscribeEventReturnType));
-		assertFalse(this.handler.supportsReturnType(this.subscribeEventSendToReturnType));
-		assertFalse(this.handler.supportsReturnType(this.messageMappingReturnType));
+		assertTrue(this.handler.supportsReturnType(this.subscribeEventHandlerMethod.getReturnType()));
+		assertFalse(this.handler.supportsReturnType(this.subscribeEventSendToHandlerMethod.getReturnType()));
+		assertFalse(this.handler.supportsReturnType(this.messageMappingHandlerMethod.getReturnType()));
 	}
 
 	@Test
@@ -124,7 +124,7 @@ public class SubscriptionMethodReturnValueHandlerTests {
 		String destination = "/dest";
 		Message<?> inputMessage = createInputMessage(sessionId, subscriptionId, destination, null);
 
-		this.handler.handleReturnValue(PAYLOAD, this.subscribeEventReturnType, inputMessage);
+		this.handler.handleReturnValue(PAYLOAD, this.subscribeEventHandlerMethod, inputMessage);
 
 		verify(this.messageChannel).send(this.messageCaptor.capture());
 		assertNotNull(this.messageCaptor.getValue());
@@ -138,7 +138,7 @@ public class SubscriptionMethodReturnValueHandlerTests {
 		assertEquals(subscriptionId, headerAccessor.getSubscriptionId());
 		assertEquals(destination, headerAccessor.getDestination());
 		assertEquals(MIME_TYPE, headerAccessor.getContentType());
-		assertEquals(this.subscribeEventReturnType, headerAccessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
+		assertEquals(this.subscribeEventHandlerMethod.getReturnType(), headerAccessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
 	}
 
 	@Test
@@ -153,7 +153,7 @@ public class SubscriptionMethodReturnValueHandlerTests {
 		MessageSendingOperations messagingTemplate = Mockito.mock(MessageSendingOperations.class);
 		SubscriptionMethodReturnValueHandler handler = new SubscriptionMethodReturnValueHandler(messagingTemplate);
 
-		handler.handleReturnValue(PAYLOAD, this.subscribeEventReturnType, inputMessage);
+		handler.handleReturnValue(PAYLOAD, this.subscribeEventHandlerMethod, inputMessage);
 
 		ArgumentCaptor<MessageHeaders> captor = ArgumentCaptor.forClass(MessageHeaders.class);
 		verify(messagingTemplate).convertAndSend(eq("/dest"), eq(PAYLOAD), captor.capture());
@@ -165,7 +165,7 @@ public class SubscriptionMethodReturnValueHandlerTests {
 		assertTrue(headerAccessor.isMutable());
 		assertEquals(sessionId, headerAccessor.getSessionId());
 		assertEquals(subscriptionId, headerAccessor.getSubscriptionId());
-		assertEquals(this.subscribeEventReturnType, headerAccessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
+		assertEquals(this.subscribeEventHandlerMethod.getReturnType(), headerAccessor.getHeader(AbstractMessageConverter.METHOD_PARAMETER_HINT_HEADER));
 	}
 
 	@Test
@@ -178,7 +178,7 @@ public class SubscriptionMethodReturnValueHandlerTests {
 		String destination = "/dest";
 		Message<?> inputMessage = createInputMessage(sessionId, subscriptionId, destination, null);
 
-		this.jsonHandler.handleReturnValue(getJsonView(), this.subscribeEventJsonViewReturnType, inputMessage);
+		this.jsonHandler.handleReturnValue(getJsonView(), this.subscribeEventJsonViewHandlerMethod, inputMessage);
 
 		verify(this.messageChannel).send(this.messageCaptor.capture());
 		Message<?> message = this.messageCaptor.getValue();

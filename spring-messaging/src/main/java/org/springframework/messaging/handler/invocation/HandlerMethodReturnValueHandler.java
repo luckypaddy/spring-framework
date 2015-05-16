@@ -18,12 +18,14 @@ package org.springframework.messaging.handler.invocation;
 
 import org.springframework.core.MethodParameter;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.handler.HandlerMethod;
 
 /**
  * Strategy interface to handle the value returned from the invocation of a
  * method handling a {@link Message}.
  *
  * @author Rossen Stoyanchev
+ * @author Sebastien Deleuze
  * @since 4.0
  */
 public interface HandlerMethodReturnValueHandler {
@@ -39,14 +41,19 @@ public interface HandlerMethodReturnValueHandler {
 
 	/**
 	 * Handle the given return value.
+	 * <p>As of Spring Framework 4.2, the 2nd parameter changed from {@link MethodParameter}
+	 * to {@link HandlerMethod} in order to be able to find the right exception handler
+	 * in case of async return value handler. The return type can still be easily retrieved
+	 * with {@code handlerMethod.getReturnType()}.</p>
+	 * 
 	 * @param returnValue the value returned from the handler method
-	 * @param returnType the type of the return value. This type must have
+	 * @param handlerMethod the related handler method. The return value type must have
 	 * previously been passed to
 	 * {@link #supportsReturnType(org.springframework.core.MethodParameter)}
 	 * and it must have returned {@code true}
 	 * @param message the message that caused this method to be called
 	 * @throws Exception if the return value handling results in an error
 	 */
-	void handleReturnValue(Object returnValue, MethodParameter returnType, Message<?> message) throws Exception;
+	void handleReturnValue(Object returnValue, HandlerMethod handlerMethod, Message<?> message) throws Exception;
 
 }

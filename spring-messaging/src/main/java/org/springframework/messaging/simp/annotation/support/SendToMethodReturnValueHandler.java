@@ -27,6 +27,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.converter.AbstractMessageConverter;
 import org.springframework.messaging.handler.DestinationPatternsMessageCondition;
+import org.springframework.messaging.handler.HandlerMethod;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.handler.annotation.support.DestinationVariableMethodArgumentResolver;
 import org.springframework.messaging.handler.invocation.HandlerMethodReturnValueHandler;
@@ -141,13 +142,14 @@ public class SendToMethodReturnValueHandler implements HandlerMethodReturnValueH
 	}
 
 	@Override
-	public void handleReturnValue(Object returnValue, MethodParameter returnType, Message<?> message) throws Exception {
+	public void handleReturnValue(Object returnValue, HandlerMethod handlerMethod, Message<?> message) throws Exception {
 		if (returnValue == null) {
 			return;
 		}
 		MessageHeaders headers = message.getHeaders();
 		String sessionId = SimpMessageHeaderAccessor.getSessionId(headers);
 		PlaceholderResolver varResolver = initVarResolver(headers);
+		MethodParameter returnType = handlerMethod.getReturnType();
 		SendToUser sendToUser = returnType.getMethodAnnotation(SendToUser.class);
 
 		if (sendToUser != null) {
