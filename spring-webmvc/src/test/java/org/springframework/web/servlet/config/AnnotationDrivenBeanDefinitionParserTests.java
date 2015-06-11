@@ -42,6 +42,7 @@ import org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver;
 import org.springframework.web.servlet.mvc.method.annotation.JsonViewRequestBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.JsonViewResponseBodyAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.ParameterizedTypeResponseBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
@@ -192,6 +193,7 @@ public class AnnotationDrivenBeanDefinitionParserTests {
 		List<ResponseBodyAdvice> converters = (List<ResponseBodyAdvice>) value;
 		assertTrue(converters.get(0) instanceof JsonViewRequestBodyAdvice);
 		assertTrue(converters.get(1) instanceof JsonViewResponseBodyAdvice);
+		assertTrue(converters.get(2) instanceof ParameterizedTypeResponseBodyAdvice);
 	}
 
 }

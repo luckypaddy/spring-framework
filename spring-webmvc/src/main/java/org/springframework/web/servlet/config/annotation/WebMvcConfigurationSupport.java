@@ -86,6 +86,7 @@ import org.springframework.web.servlet.mvc.annotation.ResponseStatusExceptionRes
 import org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver;
 import org.springframework.web.servlet.mvc.method.annotation.JsonViewRequestBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.JsonViewResponseBodyAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.ParameterizedTypeResponseBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
@@ -493,6 +494,7 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 
 			List<ResponseBodyAdvice<?>> responseBodyAdvices = new ArrayList<ResponseBodyAdvice<?>>();
 			responseBodyAdvices.add(new JsonViewResponseBodyAdvice());
+			responseBodyAdvices.add(new ParameterizedTypeResponseBodyAdvice());
 			adapter.setResponseBodyAdvice(responseBodyAdvices);
 		}
 

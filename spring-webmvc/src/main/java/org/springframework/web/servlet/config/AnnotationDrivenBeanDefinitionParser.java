@@ -76,6 +76,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExc
 import org.springframework.web.servlet.mvc.method.annotation.JsonViewRequestBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.JsonViewResponseBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
+import org.springframework.web.servlet.mvc.method.annotation.ParameterizedTypeResponseBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.mvc.method.annotation.ServletWebArgumentResolverAdapter;
@@ -322,8 +323,11 @@ class AnnotationDrivenBeanDefinitionParser implements BeanDefinitionParser {
 
 	protected void addResponseBodyAdvice(RootBeanDefinition beanDef) {
 		if (jackson2Present) {
-			beanDef.getPropertyValues().add("responseBodyAdvice",
-					new RootBeanDefinition(JsonViewResponseBodyAdvice.class));
+			ManagedList<? super Object> responseBodyAdvice = new ManagedList<Object>();
+			responseBodyAdvice.setSource(beanDef.getSource());
+			responseBodyAdvice.add(new RootBeanDefinition(JsonViewResponseBodyAdvice.class));
+			responseBodyAdvice.add(new RootBeanDefinition(ParameterizedTypeResponseBodyAdvice.class));
+			beanDef.getPropertyValues().add("responseBodyAdvice", responseBodyAdvice);
 		}
 	}
 

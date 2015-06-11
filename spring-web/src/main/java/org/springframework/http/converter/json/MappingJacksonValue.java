@@ -16,7 +16,11 @@
 
 package org.springframework.http.converter.json;
 
+import java.lang.reflect.Type;
+
 import com.fasterxml.jackson.databind.ser.FilterProvider;
+
+import org.springframework.core.ParameterizedTypeValue;
 
 /**
  * A simple holder for the POJO to serialize via
@@ -33,9 +37,7 @@ import com.fasterxml.jackson.databind.ser.FilterProvider;
  * @author Rossen Stoyanchev
  * @since 4.1
  */
-public class MappingJacksonValue {
-
-	private Object value;
+public class MappingJacksonValue extends ParameterizedTypeValue {
 
 	private Class<?> serializationView;
 
@@ -49,22 +51,16 @@ public class MappingJacksonValue {
 	 * @param value the Object to be serialized
 	 */
 	public MappingJacksonValue(Object value) {
-		this.value = value;
-	}
-
-
-	/**
-	 * Modify the POJO to serialize.
-	 */
-	public void setValue(Object value) {
-		this.value = value;
+		super(value);
 	}
 
 	/**
-	 * Return the POJO that needs to be serialized.
+	 * Create a new instance wrapping the given POJO to be serialized.
+	 * @param value the Object to be serialized
+	 * @param type the Type to be retained
 	 */
-	public Object getValue() {
-		return this.value;
+	public MappingJacksonValue(Object value, Type type) {
+		super(value, type);
 	}
 
 	/**

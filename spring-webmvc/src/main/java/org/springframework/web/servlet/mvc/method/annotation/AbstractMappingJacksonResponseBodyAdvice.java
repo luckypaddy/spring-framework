@@ -17,6 +17,7 @@
 package org.springframework.web.servlet.mvc.method.annotation;
 
 import org.springframework.core.MethodParameter;
+import org.springframework.core.ParameterizedTypeValue;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
@@ -55,7 +56,14 @@ public abstract class AbstractMappingJacksonResponseBodyAdvice implements Respon
 	 * additional serialization instructions) or simply cast it if already wrapped.
 	 */
 	protected MappingJacksonValue getOrCreateContainer(Object body) {
-		return (body instanceof MappingJacksonValue ? (MappingJacksonValue) body : new MappingJacksonValue(body));
+		if (body instanceof MappingJacksonValue) {
+			return (MappingJacksonValue) body;
+		}
+		else if (body instanceof ParameterizedTypeValue) {
+			ParameterizedTypeValue value = (ParameterizedTypeValue) body;
+			return new MappingJacksonValue(value.getValue(), value.getType());
+		}
+		return new MappingJacksonValue(body);
 	}
 
 	/**

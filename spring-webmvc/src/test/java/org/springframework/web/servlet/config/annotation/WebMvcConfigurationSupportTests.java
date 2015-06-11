@@ -70,6 +70,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExc
 import org.springframework.web.servlet.mvc.method.annotation.JsonViewRequestBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.JsonViewResponseBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
+import org.springframework.web.servlet.mvc.method.annotation.ParameterizedTypeResponseBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
@@ -194,9 +195,10 @@ public class WebMvcConfigurationSupportTests {
 		DirectFieldAccessor fieldAccessor = new DirectFieldAccessor(adapter);
 		@SuppressWarnings("unchecked")
 		List<Object> interceptors = (List<Object>) fieldAccessor.getPropertyValue("requestResponseBodyAdvice");
-		assertEquals(2, interceptors.size());
+		assertEquals(3, interceptors.size());
 		assertEquals(JsonViewRequestBodyAdvice.class, interceptors.get(0).getClass());
 		assertEquals(JsonViewResponseBodyAdvice.class, interceptors.get(1).getClass());
+		assertEquals(ParameterizedTypeResponseBodyAdvice.class, interceptors.get(2).getClass());
 	}
 
 	@Test
