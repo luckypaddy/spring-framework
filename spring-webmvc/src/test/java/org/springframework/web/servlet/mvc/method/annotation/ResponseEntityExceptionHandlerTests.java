@@ -54,6 +54,7 @@ import org.springframework.web.servlet.mvc.multiaction.NoSuchRequestHandlingMeth
 import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
 
 import static org.junit.Assert.*;
+import org.mockito.Mockito;
 
 /**
  * Test fixture for {@link ResponseEntityExceptionHandler}.
@@ -168,7 +169,7 @@ public class ResponseEntityExceptionHandlerTests {
 
 	@Test
 	public void methodArgumentNotValid() {
-		Exception ex = new MethodArgumentNotValidException(null, null);
+		Exception ex = Mockito.mock(MethodArgumentNotValidException.class);
 		testException(ex);
 	}
 
