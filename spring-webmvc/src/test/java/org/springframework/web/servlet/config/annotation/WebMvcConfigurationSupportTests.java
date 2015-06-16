@@ -193,10 +193,10 @@ public class WebMvcConfigurationSupportTests {
 
 		DirectFieldAccessor fieldAccessor = new DirectFieldAccessor(adapter);
 		@SuppressWarnings("unchecked")
-		List<Object> interceptors = (List<Object>) fieldAccessor.getPropertyValue("requestResponseBodyAdvice");
-		assertEquals(2, interceptors.size());
-		assertEquals(JsonViewRequestBodyAdvice.class, interceptors.get(0).getClass());
-		assertEquals(JsonViewResponseBodyAdvice.class, interceptors.get(1).getClass());
+		List<Object> bodyAdvices = (List<Object>) fieldAccessor.getPropertyValue("requestResponseBodyAdvice");
+		assertEquals(2, bodyAdvices.size());
+		assertEquals(JsonViewRequestBodyAdvice.class, bodyAdvices.get(0).getClass());
+		assertEquals(JsonViewResponseBodyAdvice.class, bodyAdvices.get(1).getClass());
 	}
 
 	@Test

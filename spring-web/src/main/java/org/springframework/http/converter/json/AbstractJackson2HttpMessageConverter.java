@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
 
@@ -40,6 +41,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.TypeUtils;
 
 /**
  * Abstract base class for Jackson based and content type independent
@@ -159,6 +161,11 @@ public abstract class AbstractJackson2HttpMessageConverter extends AbstractHttpM
 
 	@Override
 	public boolean canWrite(Class<?> clazz, MediaType mediaType) {
+		return canWrite(null, clazz, mediaType);
+	}
+
+	@Override
+	public boolean canWrite(Type type, Class<?> clazz, MediaType mediaType) {
 		if (!jackson23Available || !logger.isWarnEnabled()) {
 			return (this.objectMapper.canSerialize(clazz) && canWrite(mediaType));
 		}
@@ -220,29 +227,47 @@ public abstract class AbstractJackson2HttpMessageConverter extends AbstractHttpM
 	@Override
 	protected void writeInternal(Object object, HttpOutputMessage outputMessage)
 			throws IOException, HttpMessageNotWritableException {
+		// should not be called, since we override writeInternal
+		throw new UnsupportedOperationException();
+	}
 
+	@Override
+	@SuppressWarnings("deprecation")
+	protected void writeInternal(Object object, Type type, HttpOutputMessage outputMessage)
+			throws IOException, HttpMessageNotWritableException {
 		JsonEncoding encoding = getJsonEncoding(outputMessage.getHeaders().getContentType());
 		JsonGenerator generator = this.objectMapper.getFactory().createGenerator(outputMessage.getBody(), encoding);
 		try {
 			writePrefix(generator, object);
+
 			Class<?> serializationView = null;
 			FilterProvider filters = null;
 			Object value = object;
-			if (value instanceof MappingJacksonValue) {
+			JavaType javaType = null;
+			if (type != null) {
+				javaType = getJavaType(type, null);
+			}
+			if (object instanceof MappingJacksonValue) {
 				MappingJacksonValue container = (MappingJacksonValue) object;
 				value = container.getValue();
 				serializationView = container.getSerializationView();
 				filters = container.getFilters();
 			}
+			ObjectWriter objectWriter;
 			if (serializationView != null) {
-				this.objectMapper.writerWithView(serializationView).writeValue(generator, value);
+				objectWriter = this.objectMapper.writerWithView(serializationView);
 			}
 			else if (filters != null) {
-				this.objectMapper.writer(filters).writeValue(generator, value);
+				objectWriter = this.objectMapper.writer(filters);
 			}
 			else {
-				this.objectMapper.writeValue(generator, value);
+				objectWriter = this.objectMapper.writer();
 			}
+			if (javaType != null && value != null && TypeUtils.isAssignable(type, value.getClass())) {
+				objectWriter = objectWriter.withType(javaType);
+			}
+			objectWriter.writeValue(generator, value);
+
 			writeSuffix(generator, object);
 			generator.flush();
 

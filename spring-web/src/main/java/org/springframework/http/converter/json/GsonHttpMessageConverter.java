@@ -126,6 +126,11 @@ public class GsonHttpMessageConverter extends AbstractHttpMessageConverter<Objec
 	}
 
 	@Override
+	public boolean canWrite(Type type, Class<?> clazz, MediaType mediaType) {
+		return canWrite(mediaType);
+	}
+
+	@Override
 	public boolean canWrite(Class<?> clazz, MediaType mediaType) {
 		return canWrite(mediaType);
 	}
@@ -194,6 +199,13 @@ public class GsonHttpMessageConverter extends AbstractHttpMessageConverter<Objec
 	@Override
 	protected void writeInternal(Object o, HttpOutputMessage outputMessage)
 			throws IOException, HttpMessageNotWritableException {
+		// should not be called, since we override writeInternal
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	protected void writeInternal(Object o, Type type, HttpOutputMessage outputMessage)
+			throws IOException, HttpMessageNotWritableException {
 
 		Charset charset = getCharset(outputMessage.getHeaders());
 		OutputStreamWriter writer = new OutputStreamWriter(outputMessage.getBody(), charset);
@@ -201,7 +213,12 @@ public class GsonHttpMessageConverter extends AbstractHttpMessageConverter<Objec
 			if (this.jsonPrefix != null) {
 				writer.append(this.jsonPrefix);
 			}
-			this.gson.toJson(o, writer);
+			if (type != null) {
+				this.gson.toJson(o, type, writer);
+			}
+			else {
+				this.gson.toJson(o, writer);
+			}
 			writer.close();
 		}
 		catch (JsonIOException ex) {

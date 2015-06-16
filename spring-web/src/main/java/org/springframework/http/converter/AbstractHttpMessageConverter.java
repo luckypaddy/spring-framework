@@ -18,6 +18,7 @@ package org.springframework.http.converter;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -160,14 +161,21 @@ public abstract class AbstractHttpMessageConverter<T> implements HttpMessageConv
 	}
 
 	/**
-	 * This implementation delegates to {@link #getDefaultContentType(Object)} if a content
-	 * type was not provided, calls {@link #getContentLength}, and sets the corresponding headers
-	 * on the output message. It then calls {@link #writeInternal}.
+	 * @see #write(Object, Type, MediaType, HttpOutputMessage)
 	 */
 	@Override
 	public final void write(final T t, MediaType contentType, HttpOutputMessage outputMessage)
 			throws IOException, HttpMessageNotWritableException {
+		write(t, null, contentType, outputMessage);
+	}
 
+	/**
+	 * This implementation delegates to {@link #getDefaultContentType(Object)} if a content
+	 * type was not provided, calls {@link #getContentLength}, and sets the corresponding headers
+	 * on the output message. It then calls {@link #writeInternal}.
+	 */
+	public final void write(final T t, final Type type, MediaType contentType, HttpOutputMessage outputMessage)
+			throws IOException, HttpMessageNotWritableException {
 		final HttpHeaders headers = outputMessage.getHeaders();
 		if (headers.getContentType() == null) {
 			MediaType contentTypeToUse = contentType;
@@ -175,8 +183,8 @@ public abstract class AbstractHttpMessageConverter<T> implements HttpMessageConv
 				contentTypeToUse = getDefaultContentType(t);
 			}
 			else if (MediaType.APPLICATION_OCTET_STREAM.equals(contentType)) {
-				MediaType type = getDefaultContentType(t);
-				contentTypeToUse = (type != null ? type : contentTypeToUse);
+				MediaType mediaType = getDefaultContentType(t);
+				contentTypeToUse = (mediaType != null ? mediaType : contentTypeToUse);
 			}
 			if (contentTypeToUse != null) {
 				headers.setContentType(contentTypeToUse);
@@ -195,7 +203,7 @@ public abstract class AbstractHttpMessageConverter<T> implements HttpMessageConv
 			streamingOutputMessage.setBody(new StreamingHttpOutputMessage.Body() {
 				@Override
 				public void writeTo(final OutputStream outputStream) throws IOException {
-					writeInternal(t, new HttpOutputMessage() {
+					writeInternal(t, type, new HttpOutputMessage() {
 						@Override
 						public OutputStream getBody() throws IOException {
 							return outputStream;
@@ -209,7 +217,7 @@ public abstract class AbstractHttpMessageConverter<T> implements HttpMessageConv
 			});
 		}
 		else {
-			writeInternal(t, outputMessage);
+			writeInternal(t, type, outputMessage);
 			outputMessage.getBody().flush();
 		}
 	}
@@ -257,6 +265,19 @@ public abstract class AbstractHttpMessageConverter<T> implements HttpMessageConv
 	 */
 	protected abstract T readInternal(Class<? extends T> clazz, HttpInputMessage inputMessage)
 			throws IOException, HttpMessageNotReadableException;
+
+	/**
+	 * Abstract template method that writes the actual body. Invoked from {@link #write}.
+	 * @param t the object to write to the output message
+	 * @param type the type of object to write, can be {@code null} if not specified.
+	 * @param outputMessage the HTTP output message to write to
+	 * @throws IOException in case of I/O errors
+	 * @throws HttpMessageNotWritableException in case of conversion errors
+	 */
+	protected void writeInternal(T t, Type type, HttpOutputMessage outputMessage)
+			throws IOException, HttpMessageNotWritableException {
+		writeInternal(t, outputMessage);
+	}
 
 	/**
 	 * Abstract template method that writes the actual body. Invoked from {@link #write}.

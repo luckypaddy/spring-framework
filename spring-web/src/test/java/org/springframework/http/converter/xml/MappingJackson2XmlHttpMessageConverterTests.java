@@ -19,6 +19,7 @@ package org.springframework.http.converter.xml;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 
 import com.fasterxml.jackson.annotation.JsonView;
@@ -143,9 +144,9 @@ public class MappingJackson2XmlHttpMessageConverterTests {
 			throws NoSuchMethodException, InvocationTargetException,
 			IllegalAccessException {
 		Method method = AbstractJackson2HttpMessageConverter.class.getDeclaredMethod(
-				"writeInternal", Object.class, HttpOutputMessage.class);
+				"writeInternal", Object.class, Type.class, HttpOutputMessage.class);
 		method.setAccessible(true);
-		method.invoke(this.converter, object, outputMessage);
+		method.invoke(this.converter, object, null, outputMessage);
 	}
 
 
