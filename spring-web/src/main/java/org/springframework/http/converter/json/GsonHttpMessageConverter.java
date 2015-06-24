@@ -115,11 +115,6 @@ public class GsonHttpMessageConverter extends AbstractGenericHttpMessageConverte
 
 
 	@Override
-	public boolean canRead(Class<?> clazz, MediaType mediaType) {
-		return canRead(mediaType);
-	}
-
-	@Override
 	public boolean canRead(Type type, Class<?> contextClass, MediaType mediaType) {
 		return canRead(mediaType);
 	}

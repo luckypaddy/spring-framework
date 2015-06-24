@@ -132,11 +132,6 @@ public abstract class AbstractJackson2HttpMessageConverter extends AbstractGener
 
 
 	@Override
-	public boolean canRead(Class<?> clazz, MediaType mediaType) {
-		return canRead(clazz, null, mediaType);
-	}
-
-	@Override
 	public boolean canRead(Type type, Class<?> contextClass, MediaType mediaType) {
 		JavaType javaType = getJavaType(type, contextClass);
 		if (!jackson23Available || !logger.isWarnEnabled()) {
