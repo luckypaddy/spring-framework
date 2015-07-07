@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.springframework.http.HttpMethod;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.cors.CorsConfiguration;
 
 /**
@@ -49,13 +50,12 @@ public class CorsRegistration {
 		this.pathPattern = pathPattern;
 		// Same implicit default values as the @CrossOrigin annotation + allows simple methods
 		this.config = new CorsConfiguration();
-		this.config.addAllowedOrigin(CorsConfiguration.ALL);
-		this.config.addAllowedMethod(HttpMethod.GET);
-		this.config.addAllowedMethod(HttpMethod.HEAD);
-		this.config.addAllowedMethod(HttpMethod.POST);
-		this.config.addAllowedHeader(CorsConfiguration.ALL);
-		this.config.setAllowCredentials(Boolean.TRUE);
-		this.config.setMaxAge(CorsConfiguration.DEFAULT_MAX_AGE);
+		this.config.setAllowedOrigins(Arrays.asList(CrossOrigin.DEFAULT_ORIGIN));
+		this.config.setAllowedMethods(Arrays.asList(HttpMethod.GET.name(),
+				HttpMethod.HEAD.name(), HttpMethod.POST.name()));
+		this.config.setAllowedHeaders(Arrays.asList(CrossOrigin.DEFAULT_ALLOWED_HEADERS));
+		this.config.setAllowCredentials(CrossOrigin.DEFAULT_ALLOW_CREDENTIALS);
+		this.config.setMaxAge(CrossOrigin.DEFAULT_MAX_AGE);
 	}
 
 	public CorsRegistration allowedOrigins(String... origins) {
@@ -78,13 +78,18 @@ public class CorsRegistration {
 		return this;
 	}
 
+	public CorsRegistration allowCredentials(boolean allowCredentials) {
+		this.config.setAllowCredentials(allowCredentials);
+		return this;
+	}
+
 	public CorsRegistration maxAge(long maxAge) {
 		this.config.setMaxAge(maxAge);
 		return this;
 	}
 
-	public CorsRegistration allowCredentials(boolean allowCredentials) {
-		this.config.setAllowCredentials(allowCredentials);
+	public CorsRegistration strictFiltering(boolean strictFiltering) {
+		this.config.setStrictFiltering(strictFiltering);
 		return this;
 	}
 

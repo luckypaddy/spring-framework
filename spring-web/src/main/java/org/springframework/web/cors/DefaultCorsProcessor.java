@@ -125,8 +125,13 @@ public class DefaultCorsProcessor implements CorsProcessor {
 		List<String> allowHeaders = checkHeaders(config, requestHeaders);
 
 		if (allowOrigin == null || allowMethods == null || (preFlightRequest && allowHeaders == null)) {
-			rejectRequest(response);
-			return false;
+			if (preFlightRequest || !Boolean.FALSE.equals(config.getStrictFiltering())) {
+				rejectRequest(response);
+				return false;
+			}
+			else {
+				return true;
+			}
 		}
 
 		HttpHeaders responseHeaders = response.getHeaders();

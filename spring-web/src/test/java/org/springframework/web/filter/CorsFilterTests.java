@@ -18,6 +18,7 @@ package org.springframework.web.filter;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 
@@ -55,16 +56,19 @@ public class CorsFilterTests {
 	@Test
 	public void validActualRequest() throws ServletException, IOException {
 
+		final AtomicBoolean forwarded = new AtomicBoolean(false);
 		MockHttpServletRequest request = new MockHttpServletRequest(HttpMethod.GET.name(), "/test.html");
 		request.addHeader(HttpHeaders.ORIGIN, "http://domain2.com");
 		request.addHeader("header2", "foo");
 		MockHttpServletResponse response = new MockHttpServletResponse();
 
 		FilterChain filterChain = (filterRequest, filterResponse) -> {
-			assertEquals("http://domain2.com", response.getHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
-			assertEquals("header3, header4", response.getHeader(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS));
+			forwarded.set(true);
 		};
 		filter.doFilter(request, response, filterChain);
+		assertEquals("http://domain2.com", response.getHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+		assertEquals("header3, header4", response.getHeader(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS));
+		assertTrue(forwarded.get());
 	}
 
 	@Test
@@ -80,6 +84,22 @@ public class CorsFilterTests {
 		};
 		filter.doFilter(request, response, filterChain);
 		assertNull(response.getHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+	}
+
+	@Test
+	public void invalidActualRequestWithStrictFilteringDisabled() throws ServletException, IOException {
+
+		final AtomicBoolean forwarded = new AtomicBoolean(false);
+		MockHttpServletRequest request = new MockHttpServletRequest(HttpMethod.DELETE.name(), "/test.html");
+		request.addHeader(HttpHeaders.ORIGIN, "http://domain2.com");
+		request.addHeader("header2", "foo");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		config.setStrictFiltering(false);
+
+		FilterChain filterChain = (filterRequest, filterResponse) -> forwarded.set(true);
+		filter.doFilter(request, response, filterChain);
+		assertNull(response.getHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+		assertTrue(forwarded.get());
 	}
 
 	@Test

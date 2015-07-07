@@ -316,6 +316,9 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 		if (config.getMaxAge() == null) {
 			config.setMaxAge(CrossOrigin.DEFAULT_MAX_AGE);
 		}
+		if (config.getStrictFiltering() == null) {
+			config.setStrictFiltering(CrossOrigin.DEFAULT_STRICT_FILTERING);
+		}
 		return config;
 	}
 
@@ -350,6 +353,18 @@ public class RequestMappingHandlerMapping extends RequestMappingInfoHandlerMappi
 
 		if ((annotation.maxAge() >= 0) && (config.getMaxAge() == null)) {
 			config.setMaxAge(annotation.maxAge());
+		}
+
+		String strictFiltering = annotation.strictFiltering();
+		if ("true".equalsIgnoreCase(strictFiltering)) {
+			config.setStrictFiltering(true);
+		}
+		else if ("false".equalsIgnoreCase(strictFiltering)) {
+			config.setStrictFiltering(false);
+		}
+		else if (!strictFiltering.isEmpty()) {
+			throw new IllegalStateException("@CrossOrigin's strictFiltering value must be \"true\", \"false\", "
+					+ "or an empty string (\"\"); current value is [" + strictFiltering + "].");
 		}
 	}
 

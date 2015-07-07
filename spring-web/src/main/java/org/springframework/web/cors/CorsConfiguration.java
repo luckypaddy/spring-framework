@@ -42,11 +42,6 @@ public class CorsConfiguration {
 	 */
 	public static final String ALL = "*";
 
-	/**
-	 * Default maximum age (30 minutes).
-	 */
-	public static final Long DEFAULT_MAX_AGE = Long.valueOf(1800);
-
 	private List<String> allowedOrigins;
 
 	private List<String> allowedMethods;
@@ -58,6 +53,8 @@ public class CorsConfiguration {
 	private Boolean allowCredentials;
 
 	private Long maxAge;
+
+	private Boolean strictFiltering;
 
 
 	/**
@@ -77,6 +74,7 @@ public class CorsConfiguration {
 		this.exposedHeaders = other.exposedHeaders;
 		this.allowCredentials = other.allowCredentials;
 		this.maxAge = other.maxAge;
+		this.strictFiltering = other.strictFiltering;
 	}
 
 	/**
@@ -102,6 +100,10 @@ public class CorsConfiguration {
 		Long maxAge = other.getMaxAge();
 		if (maxAge != null) {
 			config.setMaxAge(maxAge);
+		}
+		Boolean strictFiltering = other.getStrictFiltering();
+		if (strictFiltering != null) {
+			config.setStrictFiltering(strictFiltering);
 		}
 		return config;
 	}
@@ -291,6 +293,26 @@ public class CorsConfiguration {
 	 */
 	public Long getMaxAge() {
 		return maxAge;
+	}
+
+	/**
+	 * Whether invalid simple/actual requests are rejected {@code true}, or pass through
+	 * the CORS processor without any CORS response headers added {@code false}.
+	 * <p>If undefined, strict filtering is enabled. Be aware that browsers like Chrome
+	 * or Safari include an {@code Origin} header on same-origin
+	 * {@code POST}/{@code PUT}/{@code DELETE} requests so these requests will be detected
+	 * as cross-origin requests.
+	 */
+	public void setStrictFiltering(Boolean strictFiltering) {
+		this.strictFiltering = strictFiltering;
+	}
+
+	/**
+	 * Return the configured {@code strictFiltering} flag, possibly {@code null}.
+	 * @see #setStrictFiltering(Boolean)
+	 */
+	public Boolean getStrictFiltering() {
+		return strictFiltering;
 	}
 
 	/**

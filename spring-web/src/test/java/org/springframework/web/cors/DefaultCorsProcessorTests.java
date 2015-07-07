@@ -66,6 +66,26 @@ public class DefaultCorsProcessorTests {
 	}
 
 	@Test
+	public void actualRequestWithOriginHeaderAndStrictFilteringDisabled() throws Exception {
+		this.request.setMethod(HttpMethod.GET.name());
+		this.request.addHeader(HttpHeaders.ORIGIN, "http://domain2.com");
+		this.conf.setStrictFiltering(false);
+		this.processor.processRequest(this.conf, request, response);
+		assertFalse(this.response.containsHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+		assertEquals(HttpServletResponse.SC_OK, response.getStatus());
+	}
+
+	@Test
+	public void actualRequestWithOriginHeaderAndStrictFilteringEnabled() throws Exception {
+		this.request.setMethod(HttpMethod.GET.name());
+		this.request.addHeader(HttpHeaders.ORIGIN, "http://domain2.com");
+		this.conf.setStrictFiltering(true);
+		this.processor.processRequest(this.conf, request, response);
+		assertFalse(this.response.containsHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+		assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+	}
+
+	@Test
 	public void actualRequestWithOriginHeaderAndNullConfig() throws Exception {
 		this.request.setMethod(HttpMethod.GET.name());
 		this.request.addHeader(HttpHeaders.ORIGIN, "http://domain2.com");
@@ -178,6 +198,7 @@ public class DefaultCorsProcessorTests {
 	public void preflightRequestTestWithOriginButWithoutOtherHeaders() throws Exception {
 		this.request.setMethod(HttpMethod.OPTIONS.name());
 		this.request.addHeader(HttpHeaders.ORIGIN, "http://domain2.com");
+		this.request.addHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET");
 		this.processor.processRequest(this.conf, request, response);
 		assertFalse(this.response.containsHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
 		assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
@@ -187,6 +208,7 @@ public class DefaultCorsProcessorTests {
 	public void preflightRequestWithoutRequestMethod() throws Exception {
 		this.request.setMethod(HttpMethod.OPTIONS.name());
 		this.request.addHeader(HttpHeaders.ORIGIN, "http://domain2.com");
+		this.request.addHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET");
 		this.request.addHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "Header1");
 		this.processor.processRequest(this.conf, request, response);
 		assertFalse(this.response.containsHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));

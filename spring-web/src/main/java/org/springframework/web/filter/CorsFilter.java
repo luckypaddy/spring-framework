@@ -78,7 +78,8 @@ public class CorsFilter extends OncePerRequestFilter {
 			CorsConfiguration corsConfiguration = this.source.getCorsConfiguration(request);
 			if (corsConfiguration != null) {
 				boolean isValid = this.processor.processRequest(corsConfiguration, request, response);
-				if (!isValid || CorsUtils.isPreFlightRequest(request)) {
+				if (CorsUtils.isPreFlightRequest(request) ||
+						(!isValid && !Boolean.FALSE.equals(corsConfiguration.getStrictFiltering())) ) {
 					return;
 				}
 			}
