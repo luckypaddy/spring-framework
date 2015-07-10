@@ -19,6 +19,7 @@ package org.springframework.web.util;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -34,6 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.http.HttpRequest;
+import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
@@ -789,13 +791,28 @@ public abstract class WebUtils {
 			return true;
 		}
 		else if (CollectionUtils.isEmpty(allowedOrigins)) {
-			UriComponents actualUrl = UriComponentsBuilder.fromHttpRequest(request).build();
-			UriComponents originUrl = UriComponentsBuilder.fromOriginHeader(origin).build();
-			return (actualUrl.getHost().equals(originUrl.getHost()) && getPort(actualUrl) == getPort(originUrl));
+			return isSameOriginRequest(request);
 		}
 		else {
 			return allowedOrigins.contains(origin);
 		}
+	}
+
+	/**
+	 * Check if the request is a same origin one, based on {@code Origin}, {@code Host},
+	 * {@code Forwarded} and {@code X-Forwarded-Host} headers.
+	 * @return {@code true} if the request is a same origin one, {@code false} in case
+	 * of cross origin one.
+	 * @since 4.2
+	 */
+	public static boolean isSameOriginRequest(HttpRequest request) {
+		String origin = request.getHeaders().getOrigin();
+		if (origin == null) {
+			return true;
+		}
+		UriComponents actualUrl = UriComponentsBuilder.fromHttpRequest(request).build();
+		UriComponents originUrl = UriComponentsBuilder.fromOriginHeader(origin).build();
+		return (actualUrl.getHost().equals(originUrl.getHost()) && getPort(actualUrl) == getPort(originUrl));
 	}
 
 	private static int getPort(UriComponents component) {

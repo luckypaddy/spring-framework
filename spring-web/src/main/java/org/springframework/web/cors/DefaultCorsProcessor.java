@@ -19,6 +19,7 @@ package org.springframework.web.cors;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -35,6 +36,7 @@ import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.util.WebUtils;
 
 /**
  * Default implementation of {@link CorsProcessor}, as defined by the
@@ -80,6 +82,11 @@ public class DefaultCorsProcessor implements CorsProcessor {
 			else {
 				return true;
 			}
+		}
+
+		if (WebUtils.isSameOriginRequest(serverRequest)) {
+			logger.debug("Skip CORS processing since request is a same origin one");
+			return true;
 		}
 
 		return handleInternal(serverRequest, serverResponse, config, preFlightRequest);
