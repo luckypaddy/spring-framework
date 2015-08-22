@@ -23,8 +23,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ser.impl.UnknownSerializer;
 import org.junit.Test;
 
+import org.springframework.http.converter.json.SpringHandlerInstantiator;
 import org.springframework.mock.web.test.MockHttpServletRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -94,6 +97,15 @@ public class StandaloneMockMvcBuilderTests {
 	public void addFilterPatternContainsNull() {
 		StandaloneMockMvcBuilder builder = MockMvcBuilders.standaloneSetup(new PersonController());
 		builder.addFilter(new ContinueFilter(), (String) null);
+	}
+
+	@Test // SPR-13375
+	public void springHandlerInstantiator() {
+		TestStandaloneMockMvcBuilder builder = new TestStandaloneMockMvcBuilder(new PersonController());
+		builder.build();
+		SpringHandlerInstantiator instantiator = new SpringHandlerInstantiator(builder.wac.getAutowireCapableBeanFactory());
+		JsonSerializer serializer = instantiator.serializerInstance(null, null, UnknownSerializer.class);
+		assertNotNull(serializer);
 	}
 
 

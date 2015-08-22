@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.servlet.ServletContext;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.TypeConverter;
 import org.springframework.beans.factory.BeanFactory;
@@ -352,7 +353,8 @@ class StubWebApplicationContext implements WebApplicationContext {
 	/**
 	 * An extension of StaticListableBeanFactory that implements
 	 * AutowireCapableBeanFactory in order to allow bean initialization of
-	 * {@link ApplicationContextAware} singletons.
+	 * {@link ApplicationContextAware} singletons and instantiates beans
+	 * without any autowiring.
 	 */
 	private class StubBeanFactory extends StaticListableBeanFactory implements AutowireCapableBeanFactory {
 
@@ -366,13 +368,13 @@ class StubWebApplicationContext implements WebApplicationContext {
 
 		@Override
 		public <T> T createBean(Class<T> beanClass) {
-			throw new UnsupportedOperationException();
+			return BeanUtils.instantiate(beanClass);
 		}
 
 		@Override
-		@SuppressWarnings("rawtypes")
+		@SuppressWarnings({"rawtypes", "unchecked"})
 		public Object createBean(Class beanClass, int autowireMode, boolean dependencyCheck) {
-			throw new UnsupportedOperationException();
+			return BeanUtils.instantiate(beanClass);
 		}
 
 		@Override
