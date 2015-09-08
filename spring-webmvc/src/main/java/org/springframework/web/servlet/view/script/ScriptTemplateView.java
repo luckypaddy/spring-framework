@@ -17,6 +17,7 @@
 package org.springframework.web.servlet.view.script;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -341,7 +342,10 @@ public class ScriptTemplateView extends AbstractUrlBasedView {
 
 	protected String getTemplate(String path) throws IOException {
 		Resource resource = this.resourceLoader.getResource(path);
-		return StreamUtils.copyToString(resource.getInputStream(), this.charset);
+		InputStream inputStream = resource.getInputStream();
+		String template = StreamUtils.copyToString(inputStream, this.charset);
+		inputStream.close();
+		return template;
 	}
 
 }
