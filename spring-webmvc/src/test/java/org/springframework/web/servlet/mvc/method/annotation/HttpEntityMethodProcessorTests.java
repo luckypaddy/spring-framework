@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -182,6 +183,24 @@ public class HttpEntityMethodProcessorTests {
 		assertTrue(content.contains("\"type\":\"bar\""));
 	}
 
+	@Test  // SPR-13523
+	public void jacksonTypeInfoIterable() throws Exception {
+		Method method = JacksonController.class.getMethod("handleIterable");
+		HandlerMethod handlerMethod = new HandlerMethod(new JacksonController(), method);
+		MethodParameter methodReturnType = handlerMethod.getReturnType();
+
+		List<HttpMessageConverter<?>> converters = new ArrayList<HttpMessageConverter<?>>();
+		converters.add(new MappingJackson2HttpMessageConverter());
+		HttpEntityMethodProcessor processor = new HttpEntityMethodProcessor(converters);
+
+		Object returnValue = new JacksonController().handleIterable();
+		processor.handleReturnValue(returnValue, methodReturnType, this.mavContainer, this.webRequest);
+
+		String content = this.servletResponse.getContentAsString();
+		assertTrue(content.contains("\"type\":\"foo\""));
+		assertTrue(content.contains("\"type\":\"bar\""));
+	}
+
 
 	@SuppressWarnings("unused")
 	public void handle(HttpEntity<List<SimpleBean>> arg1, HttpEntity<SimpleBean> arg2) {
@@ -298,6 +317,17 @@ public class HttpEntityMethodProcessorTests {
 			list.add(new Foo("foo"));
 			list.add(new Bar("bar"));
 			return new HttpEntity<>(list);
+		}
+
+		@RequestMapping
+		@ResponseBody
+		public HttpEntity<Iterable<ParentClass>> handleIterable() {
+			return new HttpEntity<>(new Iterable<ParentClass>() {
+				@Override
+				public Iterator<ParentClass> iterator() {
+					return Arrays.asList(new Foo("foo"), new Bar("bar")).iterator();
+				}
+			});
 		}
 	}
 
