@@ -415,7 +415,9 @@ public @interface RequestMapping {
 	 * produces = "text/plain"
 	 * produces = {"text/plain", "application/*"}
 	 * </pre>
-	 * Expressions can be negated by using the "!" operator, as in "!text/plain", which matches
+	 * <p>It affects the actual content type written, for example to produce a JSON response
+	 * with UTF-8 encoding, {@code produces = "application/json; charset=UTF-8"} should be used.
+	 * <p>Expressions can be negated by using the "!" operator, as in "!text/plain", which matches
 	 * all requests with a {@code Accept} other than "text/plain".
 	 * <p><b>Supported at the type level as well as at the method level!</b>
 	 * When used at the type level, all method-level mappings override
