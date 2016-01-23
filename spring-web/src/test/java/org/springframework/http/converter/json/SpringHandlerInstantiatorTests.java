@@ -218,8 +218,13 @@ public class SpringHandlerInstantiatorTests {
 			return null;
 		}
 
-		// New in Jackson 2.5
+		@Override
 		public JavaType typeFromId(DatabindContext context, String id) {
+			return null;
+		}
+
+		// New in Jackson 2.7
+		public String getDescForKnownTypeIds() {
 			return null;
 		}
 	}
