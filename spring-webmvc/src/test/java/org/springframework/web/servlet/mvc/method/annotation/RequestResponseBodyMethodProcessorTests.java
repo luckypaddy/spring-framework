@@ -29,6 +29,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.annotation.JsonView;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -68,12 +69,6 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 import org.springframework.web.util.WebUtils;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test fixture for a {@link RequestResponseBodyMethodProcessor} with
@@ -238,6 +233,29 @@ public class RequestResponseBodyMethodProcessorTests {
 
 		assertNotNull(result);
 		assertEquals("Jad", result.getName());
+	}
+
+	@Test  // SPR-14470
+	public void resolveArgumentTypeVariableWithList() throws Exception {
+		Method method = MyParameterizedControllerWithList.class.getMethod("handleDto", List.class);
+		HandlerMethod handlerMethod = new HandlerMethod(new MySimpleParameterizedController(), method);
+		MethodParameter methodParam = handlerMethod.getMethodParameters()[0];
+
+		String content = "[{\"name\" : \"Jad\"}, {\"name\" : \"Robert\"}]";
+		this.servletRequest.setContent(content.getBytes("UTF-8"));
+		this.servletRequest.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+		List<HttpMessageConverter<?>> converters = new ArrayList<>();
+		converters.add(new MappingJackson2HttpMessageConverter());
+		RequestResponseBodyMethodProcessor processor = new RequestResponseBodyMethodProcessor(converters);
+
+		@SuppressWarnings("unchecked")
+		List<SimpleBean> result = (List<SimpleBean>)
+				processor.resolveArgument(methodParam, container, request, factory);
+
+		assertNotNull(result);
+		assertEquals("Jad", result.get(0).getName());
+		assertEquals("Robert", result.get(1).getName());
 	}
 
 	@Test  // SPR-11225
@@ -725,6 +743,17 @@ public class RequestResponseBodyMethodProcessorTests {
 		void setId(Long id);
 	}
 
+	@SuppressWarnings("unused")
+	private static abstract class MyParameterizedControllerWithList<DTO extends Identifiable> {
+
+		public void handleDto(@RequestBody List<DTO> dto) {
+		}
+	}
+
+	@SuppressWarnings("unused")
+	private static class MySimpleParameterizedControllerWithList extends MyParameterizedControllerWithList<SimpleBean> {
+	}
+
 
 	@SuppressWarnings({ "serial" })
 	private static class SimpleBean implements Identifiable {
@@ -732,6 +761,13 @@ public class RequestResponseBodyMethodProcessorTests {
 		private Long id;
 
 		private String name;
+
+		public SimpleBean() {
+		}
+
+		public SimpleBean(String name) {
+			this.name = name;
+		}
 
 		@Override
 		public Long getId() {
@@ -750,6 +786,7 @@ public class RequestResponseBodyMethodProcessorTests {
 		public void setName(String name) {
 			this.name = name;
 		}
+
 	}
 
 
