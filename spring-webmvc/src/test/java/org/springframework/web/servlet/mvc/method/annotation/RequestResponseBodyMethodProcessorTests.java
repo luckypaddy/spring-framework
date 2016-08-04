@@ -58,6 +58,7 @@ import org.springframework.web.accept.ContentNegotiationManagerFactoryBean;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -692,6 +693,24 @@ public class RequestResponseBodyMethodProcessorTests {
 		assertEquals("UTF-8", this.servletResponse.getCharacterEncoding());
 	}
 
+	@Test  // SPR-14520
+	public void resolveArgumentTypeVariableWithGenericInterface() throws Exception {
+		this.servletRequest.setContent("\"foo\"".getBytes("UTF-8"));
+		this.servletRequest.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
+
+		Method method = SimpleController.class.getMethod("handle", Object.class);
+		HandlerMethod handlerMethod = new HandlerMethod(new SimpleController(), method);
+		MethodParameter methodParameter = handlerMethod.getMethodParameters()[0];
+
+		List<HttpMessageConverter<?>> converters = new ArrayList<>();
+		converters.add(new MappingJackson2HttpMessageConverter());
+
+		RequestResponseBodyMethodProcessor processor = new RequestResponseBodyMethodProcessor(converters);
+
+		String value = (String)processor.readWithMessageConverters(this.request, methodParameter, methodParameter.getGenericParameterType());
+		assertEquals("foo", value);
+	}
+
 	private void assertContentDisposition(RequestResponseBodyMethodProcessor processor,
 			boolean expectContentDisposition, String requestURI, String comment) throws Exception {
 
@@ -1009,6 +1028,17 @@ public class RequestResponseBodyMethodProcessorTests {
 
 			return body;
 		}
+	}
+
+	interface MappingInterface<A> {
+		@RequestMapping(value = "/path", method = RequestMethod.POST)
+		default A handle(@RequestBody A arg) {
+			return arg;
+		}
+	}
+
+	@RequestMapping(value = "/test")
+	static class SimpleController implements MappingInterface<String> {
 	}
 
 }
