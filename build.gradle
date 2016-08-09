@@ -721,7 +721,6 @@ project("spring-web") {
 		optional("io.reactivex:rxjava:${rxjavaVersion}")
 		optional("io.undertow:undertow-core:${undertowVersion}")
 		optional("org.jboss.xnio:xnio-api:${xnioVersion}")
-		optional("io.netty:netty-buffer:${nettyVersion}") // Temporarily for JsonObjectDecoder
 	  	optional("com.fasterxml.woodstox:woodstox-core:${woodstoxVersion}") { // woodstox before aalto
 			exclude group: "stax", module: "stax-api"
 		}

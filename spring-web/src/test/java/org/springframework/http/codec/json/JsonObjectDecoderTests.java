@@ -39,11 +39,12 @@ public class JsonObjectDecoderTests extends AbstractDataBufferAllocatingTestCase
 				decoder.decode(source, null, null).map(JsonObjectDecoderTests::toString);
 		TestSubscriber
 				.subscribe(output)
+				.assertComplete()
 				.assertValues("{\"foo\": \"foofoo\", \"bar\": \"barbar\"}");
 	}
 
 	@Test
-	public void decodeMultipleChunksToJsonObject() throws InterruptedException {
+	public void decodeMultipleChunksToJsonObject() {
 		JsonObjectDecoder decoder = new JsonObjectDecoder();
 		Flux<DataBuffer> source = Flux.just(stringBuffer("{\"foo\": \"foofoo\""),
 				stringBuffer(", \"bar\": \"barbar\"}"));
@@ -51,11 +52,12 @@ public class JsonObjectDecoderTests extends AbstractDataBufferAllocatingTestCase
 				decoder.decode(source, null, null).map(JsonObjectDecoderTests::toString);
 		TestSubscriber
 				.subscribe(output)
+				.assertComplete()
 				.assertValues("{\"foo\": \"foofoo\", \"bar\": \"barbar\"}");
 	}
 
 	@Test
-	public void decodeSingleChunkToArray() throws InterruptedException {
+	public void decodeSingleChunkToArray() {
 		JsonObjectDecoder decoder = new JsonObjectDecoder();
 		Flux<DataBuffer> source = Flux.just(stringBuffer(
 				"[{\"foo\": \"foofoo\", \"bar\": \"barbar\"},{\"foo\": \"foofoofoo\", \"bar\": \"barbarbar\"}]"));
@@ -63,12 +65,55 @@ public class JsonObjectDecoderTests extends AbstractDataBufferAllocatingTestCase
 				decoder.decode(source, null, null).map(JsonObjectDecoderTests::toString);
 		TestSubscriber
 				.subscribe(output)
+				.assertComplete()
 				.assertValues("{\"foo\": \"foofoo\", \"bar\": \"barbar\"}",
 							  "{\"foo\": \"foofoofoo\", \"bar\": \"barbarbar\"}");
 	}
 
 	@Test
-	public void decodeMultipleChunksToArray() throws InterruptedException {
+	public void decodeSingleChunkToArrayWithLeadingSpaces() {
+		JsonObjectDecoder decoder = new JsonObjectDecoder();
+		Flux<DataBuffer> source = Flux.just(stringBuffer(
+				"[ {\"foo\": \"foofoo\", \"bar\": \"barbar\"}, {\"foo\": \"foofoofoo\", \"bar\": \"barbarbar\"}]"));
+		Flux<String> output =
+				decoder.decode(source, null, null).map(JsonObjectDecoderTests::toString);
+		TestSubscriber
+				.subscribe(output)
+				.assertComplete()
+				.assertValues("{\"foo\": \"foofoo\", \"bar\": \"barbar\"}",
+							  "{\"foo\": \"foofoofoo\", \"bar\": \"barbarbar\"}");
+	}
+
+	@Test
+	public void decodeSingleChunkToArrayWithTrailingSpaces() {
+		JsonObjectDecoder decoder = new JsonObjectDecoder();
+		Flux<DataBuffer> source = Flux.just(stringBuffer(
+				"[{\"foo\": \"foofoo\", \"bar\": \"barbar\"}   ,{\"foo\": \"foofoofoo\", \"bar\": \"barbarbar\"}   ]"));
+		Flux<String> output =
+				decoder.decode(source, null, null).map(JsonObjectDecoderTests::toString);
+		TestSubscriber
+				.subscribe(output)
+				.assertComplete()
+				.assertValues("{\"foo\": \"foofoo\", \"bar\": \"barbar\"}",
+							  "{\"foo\": \"foofoofoo\", \"bar\": \"barbarbar\"}");
+	}
+
+	@Test
+	public void decodeSingleChunkToArrayWithSpaces() {
+		JsonObjectDecoder decoder = new JsonObjectDecoder();
+		Flux<DataBuffer> source = Flux.just(stringBuffer(
+				"[   {\"foo\": \"foofoo\", \"bar\": \"barbar\"}   ,    {\"foo\": \"foofoofoo\", \"bar\": \"barbarbar\"}   ]"));
+		Flux<String> output =
+				decoder.decode(source, null, null).map(JsonObjectDecoderTests::toString);
+		TestSubscriber
+				.subscribe(output)
+				.assertComplete()
+				.assertValues("{\"foo\": \"foofoo\", \"bar\": \"barbar\"}",
+							  "{\"foo\": \"foofoofoo\", \"bar\": \"barbarbar\"}");
+	}
+
+	@Test
+	public void decodeMultipleChunksToArray() {
 		JsonObjectDecoder decoder = new JsonObjectDecoder();
 		Flux<DataBuffer> source =
 				Flux.just(stringBuffer("[{\"foo\": \"foofoo\", \"bar\""), stringBuffer(
@@ -77,6 +122,7 @@ public class JsonObjectDecoderTests extends AbstractDataBufferAllocatingTestCase
 				decoder.decode(source, null, null).map(JsonObjectDecoderTests::toString);
 		TestSubscriber
 				.subscribe(output)
+				.assertComplete()
 				.assertValues("{\"foo\": \"foofoo\", \"bar\": \"barbar\"}",
 							  "{\"foo\": \"foofoofoo\", \"bar\": \"barbarbar\"}");
 	}
