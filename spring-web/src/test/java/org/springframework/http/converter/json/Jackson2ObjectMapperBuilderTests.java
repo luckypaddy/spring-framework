@@ -63,6 +63,7 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import com.fasterxml.jackson.databind.ser.std.ClassSerializer;
 import com.fasterxml.jackson.databind.ser.std.NumberSerializer;
 import com.fasterxml.jackson.databind.type.SimpleType;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import kotlin.ranges.IntRange;
 import org.joda.time.DateTime;
@@ -453,6 +454,20 @@ public class Jackson2ObjectMapperBuilderTests {
 		ListContainer<String> container = new ListContainer<>(Arrays.asList("foo", "bar"));
 		String output = objectMapper.writeValueAsString(container);
 		assertThat(output, containsString("<list>foo</list><list>bar</list></ListContainer>"));
+	}
+
+	@Test  // SPR-14435
+	public void smile() {
+		ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.smile().build();
+		assertNotNull(objectMapper);
+		assertEquals(SmileFactory.class, objectMapper.getFactory().getClass());
+	}
+
+	@Test  // SPR-14435
+	public void factory() {
+		ObjectMapper objectMapper = new Jackson2ObjectMapperBuilder().factory(new SmileFactory()).build();
+		assertNotNull(objectMapper);
+		assertEquals(SmileFactory.class, objectMapper.getFactory().getClass());
 	}
 
 

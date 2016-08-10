@@ -31,6 +31,7 @@ import javax.xml.stream.XMLResolver;
 
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.AnnotationIntrospector;
@@ -47,6 +48,7 @@ import com.fasterxml.jackson.databind.cfg.HandlerInstantiator;
 import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlFactory;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -92,6 +94,8 @@ public class Jackson2ObjectMapperBuilder {
 
 	private boolean createXmlMapper = false;
 
+	private JsonFactory factory;
+
 	private DateFormat dateFormat;
 
 	private Locale locale;
@@ -132,7 +136,6 @@ public class Jackson2ObjectMapperBuilder {
 
 	private Boolean defaultUseWrapper;
 
-
 	/**
 	 * If set to {@code true}, an {@link XmlMapper} will be created using its
 	 * default constructor. This is only applicable to {@link #build()} calls,
@@ -140,6 +143,16 @@ public class Jackson2ObjectMapperBuilder {
 	 */
 	public Jackson2ObjectMapperBuilder createXmlMapper(boolean createXmlMapper) {
 		this.createXmlMapper = createXmlMapper;
+		return this;
+	}
+
+	/**
+	 * Define the {@link JsonFactory} to be used to create the {@link ObjectMapper}
+	 * instance.
+	 * @since 5.0
+	 */
+	public Jackson2ObjectMapperBuilder factory(JsonFactory factory) {
+		this.factory = factory;
 		return this;
 	}
 
@@ -585,7 +598,7 @@ public class Jackson2ObjectMapperBuilder {
 					new XmlObjectMapperInitializer().create());
 		}
 		else {
-			mapper = new ObjectMapper();
+			mapper = (this.factory != null ? new ObjectMapper(this.factory) : new ObjectMapper());
 		}
 		configure(mapper);
 		return (T) mapper;
@@ -794,6 +807,15 @@ public class Jackson2ObjectMapperBuilder {
 		return new Jackson2ObjectMapperBuilder().createXmlMapper(true);
 	}
 
+	/**
+	 * Obtain a {@link Jackson2ObjectMapperBuilder} instance in order to
+	 * build a Smile data format {@link ObjectMapper} instance.
+	 * @since 5.0
+	 */
+	public static Jackson2ObjectMapperBuilder smile() {
+		return new Jackson2ObjectMapperBuilder().factory(new SmileFactoryInitializer().create());
+	}
+
 
 	private static class XmlObjectMapperInitializer {
 
@@ -821,6 +843,14 @@ public class Jackson2ObjectMapperBuilder {
 				return StreamUtils.emptyInput();
 			}
 		};
+	}
+
+	private static class SmileFactoryInitializer {
+
+		public JsonFactory create() {
+			return new SmileFactory();
+		}
+
 	}
 
 }
