@@ -44,6 +44,7 @@ import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.http.converter.cbor.MappingJackson2CborHttpMessageConverter;
 import org.springframework.http.converter.feed.AtomFeedHttpMessageConverter;
 import org.springframework.http.converter.feed.RssChannelHttpMessageConverter;
 import org.springframework.http.converter.json.GsonHttpMessageConverter;
@@ -188,6 +189,9 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 
 	private static final boolean jackson2SmilePresent =
 			ClassUtils.isPresent("com.fasterxml.jackson.dataformat.smile.SmileFactory", WebMvcConfigurationSupport.class.getClassLoader());
+
+	private static final boolean jackson2CborPresent =
+			ClassUtils.isPresent("com.fasterxml.jackson.dataformat.cbor.CBORFactory", WebMvcConfigurationSupport.class.getClassLoader());
 
 	private static final boolean gsonPresent =
 			ClassUtils.isPresent("com.google.gson.Gson", WebMvcConfigurationSupport.class.getClassLoader());
@@ -356,6 +360,9 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 		}
 		if (jackson2SmilePresent) {
 			map.put("smile", MediaType.valueOf("application/x-jackson-smile"));
+		}
+		if (jackson2CborPresent) {
+			map.put("cbor", MediaType.valueOf("application/cbor"));
 		}
 		return map;
 	}
@@ -771,6 +778,10 @@ public class WebMvcConfigurationSupport implements ApplicationContextAware, Serv
 		if (jackson2SmilePresent) {
 			ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.smile().applicationContext(this.applicationContext).build();
 			messageConverters.add(new MappingJackson2SmileHttpMessageConverter(objectMapper));
+		}
+		if (jackson2CborPresent) {
+			ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.cbor().applicationContext(this.applicationContext).build();
+			messageConverters.add(new MappingJackson2CborHttpMessageConverter(objectMapper));
 		}
 	}
 

@@ -40,6 +40,7 @@ import org.springframework.http.converter.GenericHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.http.converter.cbor.MappingJackson2CborHttpMessageConverter;
 import org.springframework.http.converter.feed.AtomFeedHttpMessageConverter;
 import org.springframework.http.converter.feed.RssChannelHttpMessageConverter;
 import org.springframework.http.converter.json.GsonHttpMessageConverter;
@@ -137,6 +138,9 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 	private static final boolean jackson2SmilePresent =
 			ClassUtils.isPresent("com.fasterxml.jackson.dataformat.smile.SmileFactory", RestTemplate.class.getClassLoader());
 
+	private static final boolean jackson2CborPresent =
+			ClassUtils.isPresent("com.fasterxml.jackson.dataformat.cbor.CBORFactory", RestTemplate.class.getClassLoader());
+
 	private static final boolean gsonPresent =
 			ClassUtils.isPresent("com.google.gson.Gson", RestTemplate.class.getClassLoader());
 
@@ -182,6 +186,9 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 
 		if (jackson2SmilePresent) {
 			this.messageConverters.add(new MappingJackson2SmileHttpMessageConverter());
+		}
+		if (jackson2CborPresent) {
+			this.messageConverters.add(new MappingJackson2CborHttpMessageConverter());
 		}
 	}
 

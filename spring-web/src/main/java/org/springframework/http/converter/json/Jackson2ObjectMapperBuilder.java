@@ -48,6 +48,7 @@ import com.fasterxml.jackson.databind.cfg.HandlerInstantiator;
 import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlFactory;
@@ -816,6 +817,15 @@ public class Jackson2ObjectMapperBuilder {
 		return new Jackson2ObjectMapperBuilder().factory(new SmileFactoryInitializer().create());
 	}
 
+	/**
+	 * Obtain a {@link Jackson2ObjectMapperBuilder} instance in order to
+	 * build a CBOR data format {@link ObjectMapper} instance.
+	 * @since 5.0
+	 */
+	public static Jackson2ObjectMapperBuilder cbor() {
+		return new Jackson2ObjectMapperBuilder().factory(new CborFactoryInitializer().create());
+	}
+
 
 	private static class XmlObjectMapperInitializer {
 
@@ -846,11 +856,15 @@ public class Jackson2ObjectMapperBuilder {
 	}
 
 	private static class SmileFactoryInitializer {
-
 		public JsonFactory create() {
 			return new SmileFactory();
 		}
+	}
 
+	private static class CborFactoryInitializer {
+		public JsonFactory create() {
+			return new CBORFactory();
+		}
 	}
 
 }
