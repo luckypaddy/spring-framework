@@ -74,7 +74,7 @@ public class UrlBasedViewResolver extends ViewResolverSupport implements ViewRes
 
 	private String[] viewNames;
 
-	private Function<String, RedirectView> redirectViewProvider = url -> new RedirectView(url);
+	private Function<String, RedirectView> redirectViewProvider = url -> RedirectView.seeOther(url);
 
 
 	/**

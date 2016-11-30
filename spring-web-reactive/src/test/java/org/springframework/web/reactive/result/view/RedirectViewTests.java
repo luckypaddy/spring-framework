@@ -61,14 +61,14 @@ public class RedirectViewTests {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void noUrlSet() throws Exception {
-		RedirectView rv = new RedirectView(null);
+		RedirectView rv = RedirectView.seeOther(null);
 		rv.afterPropertiesSet();
 	}
 
 	@Test
 	public void defaultStatusCode() {
 		String url = "http://url.somewhere.com";
-		RedirectView view = new RedirectView(url);
+		RedirectView view = RedirectView.seeOther("http://url.somewhere.com");
 		view.render(new HashMap<>(), MediaType.TEXT_HTML, exchange);
 		assertEquals(HttpStatus.SEE_OTHER, response.getStatusCode());
 		assertEquals(URI.create(url), response.getHeaders().getLocation());
@@ -76,10 +76,7 @@ public class RedirectViewTests {
 
 	@Test
 	public void customStatusCode() {
-		RedirectView view = RedirectView
-				.builder("http://url.somewhere.com")
-				.statusCode(HttpStatus.FOUND)
-				.build();
+		RedirectView view = RedirectView.found("http://url.somewhere.com");
 		view.render(new HashMap<>(), MediaType.TEXT_HTML, exchange);
 		assertEquals(HttpStatus.FOUND, response.getStatusCode());
 		assertEquals(URI.create("http://url.somewhere.com"), response.getHeaders().getLocation());
@@ -88,7 +85,7 @@ public class RedirectViewTests {
 	@Test
 	public void contextRelative() {
 		String url = "/test.html";
-		RedirectView view = new RedirectView(url);
+		RedirectView view = RedirectView.seeOther(url);
 		view.render(new HashMap<>(), MediaType.TEXT_HTML, exchange);
 		assertEquals(URI.create("/context/test.html"), response.getHeaders().getLocation());
 	}
@@ -96,14 +93,14 @@ public class RedirectViewTests {
 	@Test
 	public void contextRelativeQueryParam() {
 		String url = "/test.html?id=1";
-		RedirectView view = new RedirectView(url);
+		RedirectView view = RedirectView.seeOther(url);
 		view.render(new HashMap<>(), MediaType.TEXT_HTML, exchange);
 		assertEquals(URI.create("/context/test.html?id=1"), response.getHeaders().getLocation());
 	}
 
 	@Test
 	public void remoteHost() {
-		RedirectView view = new RedirectView("");
+		RedirectView view = RedirectView.seeOther("");
 
 		assertFalse(view.isRemoteHost("http://url.somewhere.com"));
 		assertFalse(view.isRemoteHost("/path"));
@@ -120,7 +117,7 @@ public class RedirectViewTests {
 	public void expandUriTemplateVariablesFromModel() {
 		String url = "http://url.somewhere.com?foo={foo}";
 		Map<String, String> model = Collections.singletonMap("foo", "bar");
-		RedirectView view = new RedirectView(url);
+		RedirectView view = RedirectView.seeOther(url);
 		view.render(model, MediaType.TEXT_HTML, exchange);
 		assertEquals(URI.create("http://url.somewhere.com?foo=bar"), response.getHeaders().getLocation());
 	}
@@ -130,17 +127,15 @@ public class RedirectViewTests {
 		String url = "http://url.somewhere.com?foo={foo}";
 		Map<String, String> attributes = Collections.singletonMap("foo", "bar");
 		exchange.getAttributes().put(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE, attributes);
-		RedirectView view = new RedirectView(url);
+		RedirectView view = RedirectView.seeOther(url);
 		view.render(new HashMap<>(), MediaType.TEXT_HTML, exchange);
 		assertEquals(URI.create("http://url.somewhere.com?foo=bar"), response.getHeaders().getLocation());
 	}
 
 	@Test
 	public void propagateQueryParams() throws Exception {
-		RedirectView view = RedirectView
-				.builder("http://url.somewhere.com?foo=bar#bazz")
-				.propagateQueryParams(true)
-				.build();
+		RedirectView view = RedirectView.seeOther("http://url.somewhere.com?foo=bar#bazz");
+		view.setPropagateQuery(true);
 		request.setUri(URI.create("http://url.somewhere.com?a=b&c=d"));
 		view.render(new HashMap<>(), MediaType.TEXT_HTML, exchange);
 		assertEquals(HttpStatus.SEE_OTHER, response.getStatusCode());

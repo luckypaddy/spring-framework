@@ -77,7 +77,7 @@ public class UrlBasedViewResolverTests {
 
 	@Test
 	public void customizedRedirectView() throws Exception {
-		resolver.setRedirectViewProvider(url -> RedirectView.builder(url).statusCode(HttpStatus.FOUND).build());
+		resolver.setRedirectViewProvider(url -> RedirectView.found(url));
 		Mono<View> mono = resolver.resolveViewName("redirect:foo", Locale.US);
 		assertNotNull(mono.block());
 		StepVerifier.create(mono)

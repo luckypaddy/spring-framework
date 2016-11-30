@@ -66,7 +66,7 @@ public class RedirectView extends AbstractUrlBasedView {
 
 	private HttpStatus statusCode = HttpStatus.SEE_OTHER;
 
-	private boolean propagateQueryParams = false;
+	private boolean propagateQuery = false;
 
 	private String[] hosts;
 
@@ -74,30 +74,59 @@ public class RedirectView extends AbstractUrlBasedView {
 	/**
 	 * Create a new {@code RedirectView} with the given redirect URL.
 	 *
-	 * @see #builder(String)
+	 * @see #movedPermanently(String)
+	 * @see #found(String)
+	 * @see #seeOther(String)
 	 */
-	public RedirectView(String redirectUrl) {
+	public RedirectView(String redirectUrl, HttpStatus statusCode) {
 		super(redirectUrl);
+		this.statusCode = statusCode;
 	}
 
 
 	/**
-	 * Return a builder for a {@code RedirectView}.
+	 * Create a {@code RedirectView} with {@link HttpStatus#SEE_OTHER} status code which is
+	 * the default temporary redirect status code to use for HTTP 1.1 clients.
 	 */
-	public static Builder builder(String redirectUrl) {
-		return new BuilderImpl(redirectUrl);
+	public static RedirectView seeOther(String redirectUrl) {
+		return new RedirectView(redirectUrl, HttpStatus.SEE_OTHER);
+	}
+
+	/**
+	 * Create a {@code RedirectView} with {@link HttpStatus#MOVED_PERMANENTLY} status code
+	 * which indicates that the target resource has been assigned a new permanent URI.
+	 */
+	public static RedirectView movedPermanently(String redirectUrl) {
+		return new RedirectView(redirectUrl, HttpStatus.MOVED_PERMANENTLY);
+	}
+
+	/**
+	 * Create a {@code RedirectView} with {@link HttpStatus#FOUND} status code which is
+	 * the default temporary redirect status code to use for HTTP 1.0 clients.
+	 * @see #seeOther(String)
+	 */
+	public static RedirectView found(String redirectUrl) {
+		return new RedirectView(redirectUrl, HttpStatus.FOUND);
 	}
 
 
 	/**
 	 * Set whether to interpret a given URL that starts with a slash ("/")
-	 * as relative to the current context path.
-	 * <p>Default is "true": the context path will be
-	 * prepended to the URL in such a case. If "false", an URL that starts
-	 * with a slash will be interpreted as absolute, i.e. taken as-is.
+	 * as relative to the current context path ({@code true}, the default) or to
+	 * the web server root ({@code false}).
 	 */
 	public void setContextRelative(boolean contextRelative) {
 		this.contextRelative = contextRelative;
+	}
+
+	/**
+	 * Return whether to interpret a given URL that starts with a slash ("/")
+	 * as relative to the current context path ("true") or to the web server
+	 * root ("false").
+	 * @return
+	 */
+	public boolean isContextRelative() {
+		return contextRelative;
 	}
 
 	/**
@@ -120,12 +149,19 @@ public class RedirectView extends AbstractUrlBasedView {
 	}
 
 	/**
-	 * When set to {@code true} the query string of the current URL is appended
-	 * and thus propagated through to the redirected URL.
-	 * <p>Defaults to {@code false}.
+	 * Set whether to append the query string of the current URL to the redirected URL
+	 * ({@code true}) or not ({@code false}, the default).
 	 */
-	public void setPropagateQueryParams(boolean propagateQueryParams) {
-		this.propagateQueryParams = propagateQueryParams;
+	public void setPropagateQuery(boolean propagateQuery) {
+		this.propagateQuery = propagateQuery;
+	}
+
+	/**
+	 * Return whether the query string of the current URL is appended to the redirected URL
+	 * ({@code true}) or not ({@code false}).
+	 */
+	public boolean isPropagateQuery() {
+		return propagateQuery;
 	}
 
 	/**
@@ -139,6 +175,13 @@ public class RedirectView extends AbstractUrlBasedView {
 	 */
 	public void setHosts(String... hosts) {
 		this.hosts = hosts;
+	}
+
+	/**
+	 * Return the configured application hosts.
+	 */
+	public String[] getHosts() {
+		return this.hosts;
 	}
 
 	/**
@@ -173,7 +216,7 @@ public class RedirectView extends AbstractUrlBasedView {
 			Map<String, String> variables = getCurrentRequestUriVariables(exchange);
 			targetUrl = replaceUriTemplateVariables(targetUrl.toString(), model, variables, charset);
 		}
-		if (this.propagateQueryParams) {
+		if (this.propagateQuery) {
 		 	appendCurrentQueryParams(targetUrl, request);
 		}
 
@@ -290,76 +333,6 @@ public class RedirectView extends AbstractUrlBasedView {
 	@Override
 	public boolean checkResourceExists(Locale locale) throws Exception {
 		return true;
-	}
-
-	public interface Builder {
-
-		/**
-		 * @see RedirectView#setContextRelative(boolean)
-		 */
-		Builder contextRelative(boolean contextRelative);
-
-		/**
-		 * @see RedirectView#setStatusCode(HttpStatus)
-		 */
-		Builder statusCode(HttpStatus statusCode);
-
-		/**
-		 * @see RedirectView#setPropagateQueryParams(boolean)
-		 */
-		Builder propagateQueryParams(boolean propagateQueryParams);
-
-		/**
-		 * @see RedirectView#setHosts(String...)
-		 */
-		Builder hosts(String... hosts);
-
-		/**
-		 * Build the redirect view.
-		 */
-		RedirectView build();
-
-	}
-
-	private static class BuilderImpl implements Builder {
-
-		private final RedirectView view;
-
-
-		public BuilderImpl(String redirectUrl) {
-			this.view = new RedirectView(redirectUrl);
-		}
-
-
-		@Override
-		public Builder contextRelative(boolean contextRelative) {
-			this.view.setContextRelative(contextRelative);
-			return this;
-		}
-
-		@Override
-		public Builder statusCode(HttpStatus statusCode) {
-			this.view.setStatusCode(statusCode);
-			return this;
-		}
-
-		@Override
-		public Builder propagateQueryParams(boolean propagateQueryParams) {
-			this.view.setPropagateQueryParams(propagateQueryParams);
-			return this;
-		}
-
-		@Override
-		public Builder hosts(String... hosts) {
-			this.view.setHosts(hosts);
-			return this;
-		}
-
-		@Override
-		public RedirectView build() {
-			return this.view;
-		}
-
 	}
 
 }
