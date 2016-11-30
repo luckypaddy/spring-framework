@@ -25,7 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-import freemarker.core.ParseException;
 import freemarker.template.Configuration;
 import freemarker.template.DefaultObjectWrapperBuilder;
 import freemarker.template.ObjectWrapper;
@@ -35,46 +34,31 @@ import freemarker.template.Version;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactoryUtils;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.context.ApplicationContextException;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
+import org.springframework.util.Assert;
 import org.springframework.web.reactive.result.view.AbstractUrlBasedView;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
  * A {@code View} implementation that uses the FreeMarker template engine.
  *
- * <p>Depends on a single {@link FreeMarkerConfig} object such as
- * {@link FreeMarkerConfigurer} being accessible in the application context.
- * Alternatively set the FreeMarker configuration can be set directly on this
- * class via {@link #setConfiguration}.
- *
- * <p>The {@link #setUrl(String) url} property is the location of the FreeMarker
- * template relative to the FreeMarkerConfigurer's
- * {@link FreeMarkerConfigurer#setTemplateLoaderPath templateLoaderPath}.
- *
  * <p>Note: Spring's FreeMarker support requires FreeMarker 2.3 or higher.
  *
  * @author Rossen Stoyanchev
+ * @author Sebastien Deleuze
  * @since 5.0
  */
 public class FreeMarkerView extends AbstractUrlBasedView {
 
-	private Configuration configuration;
+	private final Configuration configuration;
 
 	private String encoding;
 
 
-	/**
-	 * Set the FreeMarker Configuration to be used by this view.
-	 * <p>Typically this property is not set directly. Instead a single
-	 * {@link FreeMarkerConfig} is expected in the Spring application context
-	 * which is used to obtain the FreeMarker configuration.
-	 */
-	public void setConfiguration(Configuration configuration) {
+	public FreeMarkerView(String url, Configuration configuration) {
+		super(url);
+		Assert.notNull(configuration, "Freemarker Configuration must not be null");
 		this.configuration = configuration;
 	}
 
@@ -103,36 +87,6 @@ public class FreeMarkerView extends AbstractUrlBasedView {
 		return this.encoding;
 	}
 
-
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		super.afterPropertiesSet();
-		if (getConfiguration() == null) {
-			FreeMarkerConfig config = autodetectConfiguration();
-			setConfiguration(config.getConfiguration());
-		}
-	}
-
-	/**
-	 * Autodetect a {@link FreeMarkerConfig} object via the ApplicationContext.
-	 * @return the Configuration instance to use for FreeMarkerViews
-	 * @throws BeansException if no Configuration instance could be found
-	 * @see #setConfiguration
-	 */
-	protected FreeMarkerConfig autodetectConfiguration() throws BeansException {
-		try {
-			return BeanFactoryUtils.beanOfTypeIncludingAncestors(
-					getApplicationContext(), FreeMarkerConfig.class, true, false);
-		}
-		catch (NoSuchBeanDefinitionException ex) {
-			throw new ApplicationContextException(
-					"Must define a single FreeMarkerConfig bean in this web application context " +
-							"(may be inherited): FreeMarkerConfigurer is the usual implementation. " +
-							"This bean may be given any name.", ex);
-		}
-	}
-
-
 	/**
 	 * Check that the FreeMarker template used for this view exists and is valid.
 	 * <p>Can be overridden to customize the behavior, for example in case of
@@ -151,12 +105,8 @@ public class FreeMarkerView extends AbstractUrlBasedView {
 			}
 			return false;
 		}
-		catch (ParseException ex) {
-			throw new ApplicationContextException(
-					"Failed to parse FreeMarker template for URL [" +  getUrl() + "]", ex);
-		}
 		catch (IOException ex) {
-			throw new ApplicationContextException(
+			throw new IllegalStateException(
 					"Could not load FreeMarker template for URL [" + getUrl() + "]", ex);
 		}
 	}

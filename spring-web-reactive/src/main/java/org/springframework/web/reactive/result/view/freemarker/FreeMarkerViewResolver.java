@@ -15,6 +15,14 @@
  */
 package org.springframework.web.reactive.result.view.freemarker;
 
+import freemarker.template.Configuration;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.context.ApplicationContextException;
+import org.springframework.web.reactive.result.view.AbstractUrlBasedView;
 import org.springframework.web.reactive.result.view.UrlBasedViewResolver;
 
 /**
@@ -25,6 +33,7 @@ import org.springframework.web.reactive.result.view.UrlBasedViewResolver;
  * via the "viewClass" property. See {@link UrlBasedViewResolver} for details.
  *
  * @author Rossen Stoyanchev
+ * @author Sebastien Deleuze
  * @since 5.0
  */
 public class FreeMarkerViewResolver extends UrlBasedViewResolver {
@@ -48,6 +57,38 @@ public class FreeMarkerViewResolver extends UrlBasedViewResolver {
 		setSuffix(suffix);
 	}
 
+	@Override
+	protected AbstractUrlBasedView createUrlBasedView(String viewName) {
+		try {
+			FreeMarkerView view = (FreeMarkerView) BeanUtils.instantiateClass(
+					getViewClass().getConstructor(String.class, Configuration.class),
+					getPrefix() + viewName + getSuffix(), autodetectConfiguration().getConfiguration());
+			view.setSupportedMediaTypes(getSupportedMediaTypes());
+			view.setDefaultCharset(getDefaultCharset());
+			return view;
+		}
+		catch (NoSuchMethodException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+	/**
+	 * Autodetect a {@link FreeMarkerConfig} object via the ApplicationContext.
+	 * @return the Configuration instance to use for FreeMarkerViews
+	 * @throws BeansException if no Configuration instance could be found
+	 */
+	protected FreeMarkerConfig autodetectConfiguration() throws BeansException {
+		try {
+			return BeanFactoryUtils.beanOfTypeIncludingAncestors(
+					getApplicationContext(), FreeMarkerConfig.class, true, false);
+		}
+		catch (NoSuchBeanDefinitionException ex) {
+			throw new ApplicationContextException(
+					"Must define a single FreeMarkerConfig bean in this web application context " +
+							"(may be inherited): FreeMarkerConfigurer is the usual implementation. " +
+							"This bean may be given any name.", ex);
+		}
+	}
 
 	/**
 	 * Requires {@link FreeMarkerView}.

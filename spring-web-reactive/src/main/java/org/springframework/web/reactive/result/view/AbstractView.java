@@ -27,8 +27,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import reactor.core.publisher.Mono;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.MediaType;
 import org.springframework.util.Assert;
 import org.springframework.web.server.ServerWebExchange;
@@ -37,9 +35,10 @@ import org.springframework.web.server.ServerWebExchange;
  * Base class for {@link View} implementations.
  *
  * @author Rossen Stoyanchev
+ * @author Sebastien Deleuze
  * @since 5.0
  */
-public abstract class AbstractView implements View, ApplicationContextAware {
+public abstract class AbstractView implements View {
 
 	/** Logger that is available to subclasses */
 	protected final Log logger = LogFactory.getLog(getClass());
@@ -48,8 +47,6 @@ public abstract class AbstractView implements View, ApplicationContextAware {
 	private final List<MediaType> mediaTypes = new ArrayList<>(4);
 
 	private Charset defaultCharset = StandardCharsets.UTF_8;
-
-	private ApplicationContext applicationContext;
 
 
 	public AbstractView() {
@@ -93,15 +90,6 @@ public abstract class AbstractView implements View, ApplicationContextAware {
 	 */
 	public Charset getDefaultCharset() {
 		return this.defaultCharset;
-	}
-
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) {
-		this.applicationContext = applicationContext;
-	}
-
-	public ApplicationContext getApplicationContext() {
-		return applicationContext;
 	}
 
 	/**

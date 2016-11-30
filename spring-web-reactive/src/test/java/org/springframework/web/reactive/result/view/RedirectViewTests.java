@@ -61,8 +61,7 @@ public class RedirectViewTests {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void noUrlSet() throws Exception {
-		RedirectView rv = RedirectView.seeOther(null);
-		rv.afterPropertiesSet();
+		RedirectView.seeOther(null);
 	}
 
 	@Test

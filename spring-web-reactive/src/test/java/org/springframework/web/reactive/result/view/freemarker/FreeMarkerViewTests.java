@@ -18,16 +18,14 @@ package org.springframework.web.reactive.result.view.freemarker;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Locale;
 
 import freemarker.template.Configuration;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import reactor.test.StepVerifier;
 
-import org.springframework.context.ApplicationContextException;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpMethod;
@@ -45,6 +43,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Rossen Stoyanchev
+ * @author Sebastien Deleuze
  */
 public class FreeMarkerViewTests {
 
@@ -59,10 +58,6 @@ public class FreeMarkerViewTests {
 
 	private Configuration freeMarkerConfig;
 
-	@Rule
-	public final ExpectedException exception = ExpectedException.none();
-
-
 	@Before
 	public void setUp() throws Exception {
 		this.context = new GenericApplicationContext();
@@ -74,9 +69,6 @@ public class FreeMarkerViewTests {
 		configurer.setResourceLoader(this.context);
 		this.freeMarkerConfig = configurer.createConfiguration();
 
-		FreeMarkerView fv = new FreeMarkerView();
-		fv.setApplicationContext(this.context);
-
 		MockServerHttpRequest request = new MockServerHttpRequest(HttpMethod.GET, "/path");
 		this.response = new MockServerHttpResponse();
 		WebSessionManager manager = new DefaultWebSessionManager();
@@ -84,40 +76,26 @@ public class FreeMarkerViewTests {
 	}
 
 
-	@Test
-	public void noFreeMarkerConfig() throws Exception {
-		this.exception.expect(ApplicationContextException.class);
-		this.exception.expectMessage("Must define a single FreeMarkerConfig bean");
-
-		FreeMarkerView view = new FreeMarkerView();
-		view.setApplicationContext(this.context);
-		view.setUrl("anythingButNull");
-		view.afterPropertiesSet();
+	@Test(expected = IllegalArgumentException.class)
+	public void noFreeMarkerConfig() {
+		new FreeMarkerView("anythingButNull", null);
 	}
 
-	@Test
-	public void noTemplateName() throws Exception {
-		this.exception.expect(IllegalArgumentException.class);
-		this.exception.expectMessage("Property 'url' is required");
-
-		FreeMarkerView freeMarkerView = new FreeMarkerView();
-		freeMarkerView.afterPropertiesSet();
+	@Test(expected = IllegalArgumentException.class)
+	public void noTemplateName() {
+		new FreeMarkerView(null, this.freeMarkerConfig);
 	}
 
 	@Test
 	public void checkResourceExists() throws Exception {
-		FreeMarkerView view = new FreeMarkerView();
-		view.setConfiguration(this.freeMarkerConfig);
-		view.setUrl("test.ftl");
+		FreeMarkerView view = new FreeMarkerView("test.ftl", this.freeMarkerConfig);
 
 		assertTrue(view.checkResourceExists(Locale.US));
 	}
 
 	@Test
 	public void render() throws Exception {
-		FreeMarkerView view = new FreeMarkerView();
-		view.setConfiguration(this.freeMarkerConfig);
-		view.setUrl("test.ftl");
+		FreeMarkerView view = new FreeMarkerView("test.ftl", this.freeMarkerConfig);
 
 		ModelMap model = new ExtendedModelMap();
 		model.addAttribute("hello", "hi FreeMarker");

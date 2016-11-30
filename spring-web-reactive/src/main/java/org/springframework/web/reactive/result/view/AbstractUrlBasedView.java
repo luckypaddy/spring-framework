@@ -17,39 +17,26 @@ package org.springframework.web.reactive.result.view;
 
 import java.util.Locale;
 
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.util.Assert;
 
 /**
  * Abstract base class for URL-based views. Provides a consistent way of
  * holding the URL that a View wraps, in the form of a "url" bean property.
  *
  * @author Rossen Stoyanchev
+ * @author Sebastien Deleuze
  * @since 5.0
  */
-public abstract class AbstractUrlBasedView extends AbstractView implements InitializingBean {
+public abstract class AbstractUrlBasedView extends AbstractView {
 
-	private String url;
-
-
-	/**
-	 * Constructor for use as a bean.
-	 */
-	protected AbstractUrlBasedView() {
-	}
+	private final String url;
 
 	/**
 	 * Create a new AbstractUrlBasedView with the given URL.
+	 * @param url the URL of the resource that this view wraps
 	 */
 	protected AbstractUrlBasedView(String url) {
-		this.url = url;
-	}
-
-
-	/**
-	 * Set the URL of the resource that this view wraps.
-	 * The URL must be appropriate for the concrete View implementation.
-	 */
-	public void setUrl(String url) {
+		Assert.notNull(url, "'url' must not be null");
 		this.url = url;
 	}
 
@@ -58,14 +45,6 @@ public abstract class AbstractUrlBasedView extends AbstractView implements Initi
 	 */
 	public String getUrl() {
 		return this.url;
-	}
-
-
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		if (getUrl() == null) {
-			throw new IllegalArgumentException("Property 'url' is required");
-		}
 	}
 
 	/**

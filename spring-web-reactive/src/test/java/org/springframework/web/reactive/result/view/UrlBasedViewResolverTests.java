@@ -92,6 +92,10 @@ public class UrlBasedViewResolverTests {
 
 	private static class TestView extends AbstractUrlBasedView {
 
+		public TestView(String url) {
+			super(url);
+		}
+
 		@Override
 		public boolean checkResourceExists(Locale locale) throws Exception {
 			return true;

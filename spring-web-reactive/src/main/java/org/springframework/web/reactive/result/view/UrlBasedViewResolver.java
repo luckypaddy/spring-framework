@@ -218,11 +218,17 @@ public class UrlBasedViewResolver extends ViewResolverSupport implements ViewRes
 	 * @return the View instance
 	 */
 	protected AbstractUrlBasedView createUrlBasedView(String viewName) {
-		AbstractUrlBasedView view = (AbstractUrlBasedView) BeanUtils.instantiateClass(getViewClass());
-		view.setSupportedMediaTypes(getSupportedMediaTypes());
-		view.setDefaultCharset(getDefaultCharset());
-		view.setUrl(getPrefix() + viewName + getSuffix());
-		return view;
+		try {
+			AbstractUrlBasedView view = (AbstractUrlBasedView) BeanUtils.instantiateClass(
+					getViewClass().getConstructor(String.class),
+					getPrefix() + viewName + getSuffix());
+			view.setSupportedMediaTypes(getSupportedMediaTypes());
+			view.setDefaultCharset(getDefaultCharset());
+			return view;
+		}
+		catch (NoSuchMethodException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
 	private View applyLifecycleMethods(String viewName, AbstractView view) {
