@@ -110,6 +110,12 @@ configure(allprojects) { project ->
 	// Kotlin compiler does not support JDK 9 yet, see https://youtrack.jetbrains.com/issue/KT-14988
 	if (!JavaVersion.current().java9Compatible) {
 		apply plugin: "kotlin"
+		compileKotlin {
+			kotlinOptions.jvmTarget = "1.8"
+		}
+		compileTestKotlin {
+			kotlinOptions.jvmTarget = "1.8"
+		}
 	}
 
 	configurations {
