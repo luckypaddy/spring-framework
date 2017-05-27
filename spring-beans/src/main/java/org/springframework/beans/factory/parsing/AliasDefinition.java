@@ -17,6 +17,7 @@
 package org.springframework.beans.factory.parsing;
 
 import org.springframework.beans.BeanMetadataElement;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -50,6 +51,7 @@ public class AliasDefinition implements BeanMetadataElement {
 	 * @param alias the alias registered for the bean
 	 * @param source the source object (may be {@code null})
 	 */
+	@Nullable
 	public AliasDefinition(String beanName, String alias, Object source) {
 		Assert.notNull(beanName, "Bean name must not be null");
 		Assert.notNull(alias, "Alias must not be null");
