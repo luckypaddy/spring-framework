@@ -15,7 +15,7 @@
  */
 package org.springframework.web.server.session;
 
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.function.Supplier;
 
 import reactor.core.publisher.Mono;
@@ -27,6 +27,7 @@ import org.springframework.web.server.WebSession;
  * for example by implementations of {@link WebSessionManager}.
  *
  * @author Rossen Stoyanchev
+ * @author Sebastien Deleuze
  * @since 5.0
  */
 public interface ConfigurableWebSession extends WebSession {
@@ -35,7 +36,7 @@ public interface ConfigurableWebSession extends WebSession {
 	 * Update the last access time for user-related session activity.
 	 * @param time the time of access
 	 */
-	void setLastAccessTime(Instant time);
+	void setLastAccessTime(ZonedDateTime time);
 
 	/**
 	 * Set the operation to invoke when {@link WebSession#save()} is invoked.

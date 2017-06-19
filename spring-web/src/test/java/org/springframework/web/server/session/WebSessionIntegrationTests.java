@@ -118,7 +118,7 @@ public class WebSessionIntegrationTests extends AbstractHttpHandlerIntegrationTe
 		// Update lastAccessTime of the created session to -31 min
 		WebSession session = this.sessionManager.getSessionStore().retrieveSession(id).block();
 		((DefaultWebSession) session).setLastAccessTime(
-				Clock.offset(this.sessionManager.getClock(), Duration.ofMinutes(-31)).instant());
+				Clock.offset(this.sessionManager.getClock(), Duration.ofMinutes(-31)).instant().atZone(this.sessionManager.getClock().getZone()));
 
 		// Third request: expired session, new session created
 		request = RequestEntity.get(createUri("/")).header("Cookie", "SESSION=" + id).build();

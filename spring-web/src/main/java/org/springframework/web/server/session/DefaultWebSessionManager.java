@@ -16,7 +16,7 @@
 package org.springframework.web.server.session;
 
 import java.time.Clock;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -129,7 +129,7 @@ public class DefaultWebSessionManager implements WebSessionManager {
 		if (session instanceof ConfigurableWebSession) {
 			ConfigurableWebSession managed = (ConfigurableWebSession) session;
 			managed.setSaveOperation(() -> saveSession(exchange, session));
-			managed.setLastAccessTime(Instant.now(getClock()));
+			managed.setLastAccessTime(ZonedDateTime.now(getClock()));
 		}
 		exchange.getResponse().beforeCommit(session::save);
 		return session;

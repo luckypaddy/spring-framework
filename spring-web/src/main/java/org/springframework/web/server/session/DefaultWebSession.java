@@ -18,7 +18,7 @@ package org.springframework.web.server.session;
 import java.io.Serializable;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,6 +33,7 @@ import org.springframework.util.Assert;
  * Default implementation of {@link org.springframework.web.server.WebSession}.
  *
  * @author Rossen Stoyanchev
+ * @author Sebastien Deleuze
  * @since 5.0
  */
 public class DefaultWebSession implements ConfigurableWebSession, Serializable {
@@ -46,9 +47,9 @@ public class DefaultWebSession implements ConfigurableWebSession, Serializable {
 
 	private final Clock clock;
 
-	private final Instant creationTime;
+	private final ZonedDateTime creationTime;
 
-	private volatile Instant lastAccessTime;
+	private volatile ZonedDateTime lastAccessTime;
 
 	private volatile Duration maxIdleTime;
 
@@ -68,7 +69,7 @@ public class DefaultWebSession implements ConfigurableWebSession, Serializable {
 		this.id = id;
 		this.clock = clock;
 		this.attributes = new ConcurrentHashMap<>();
-		this.creationTime = Instant.now(clock);
+		this.creationTime = ZonedDateTime.now(clock);
 		this.lastAccessTime = this.creationTime;
 		this.maxIdleTime = Duration.ofMinutes(30);
 		this.state.set(State.NEW);
@@ -84,7 +85,7 @@ public class DefaultWebSession implements ConfigurableWebSession, Serializable {
 	 * @param maxIdleTime the configured maximum session idle time
 	 */
 	public DefaultWebSession(String id, Map<String, Object> attributes, Clock clock,
-			Instant creationTime, Instant lastAccessTime, Duration maxIdleTime) {
+			ZonedDateTime creationTime, ZonedDateTime lastAccessTime, Duration maxIdleTime) {
 
 		Assert.notNull(id, "'id' is required.");
 		Assert.notNull(clock, "'clock' is required.");
@@ -114,17 +115,17 @@ public class DefaultWebSession implements ConfigurableWebSession, Serializable {
 	}
 
 	@Override
-	public Instant getCreationTime() {
+	public ZonedDateTime getCreationTime() {
 		return this.creationTime;
 	}
 
 	@Override
-	public void setLastAccessTime(Instant lastAccessTime) {
+	public void setLastAccessTime(ZonedDateTime lastAccessTime) {
 		this.lastAccessTime = lastAccessTime;
 	}
 
 	@Override
-	public Instant getLastAccessTime() {
+	public ZonedDateTime getLastAccessTime() {
 		return this.lastAccessTime;
 	}
 
@@ -172,7 +173,7 @@ public class DefaultWebSession implements ConfigurableWebSession, Serializable {
 	@Override
 	public boolean isExpired() {
 		return (isStarted() && !this.maxIdleTime.isNegative() &&
-				Instant.now(this.clock).minus(this.maxIdleTime).isAfter(this.lastAccessTime));
+				ZonedDateTime.now(this.clock).minus(this.maxIdleTime).isAfter(this.lastAccessTime));
 	}
 
 

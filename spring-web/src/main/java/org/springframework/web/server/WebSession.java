@@ -17,7 +17,7 @@
 package org.springframework.web.server;
 
 import java.time.Duration;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
 
@@ -33,6 +33,7 @@ import reactor.core.publisher.Mono;
  * A session may also be created explicitly via {@link #start()}.
  *
  * @author Rossen Stoyanchev
+ * @author Sebastien Deleuze
  * @since 5.0
  */
 public interface WebSession {
@@ -93,7 +94,7 @@ public interface WebSession {
 	/**
 	 * Return the time when the session was created.
 	 */
-	Instant getCreationTime();
+	ZonedDateTime getCreationTime();
 
 	/**
 	 * Return the last time of session access as a result of user activity such
@@ -101,7 +102,7 @@ public interface WebSession {
 	 * maxIdleTimeInSeconds} this helps to determine when a session is
 	 * {@link #isExpired() expired}.
 	 */
-	Instant getLastAccessTime();
+	ZonedDateTime getLastAccessTime();
 
 	/**
 	 * Configure the max amount of time that may elapse after the

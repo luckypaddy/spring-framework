@@ -17,7 +17,7 @@ package org.springframework.web.server.session;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -116,7 +116,7 @@ public class DefaultWebSessionManagerTests {
 		Clock clock = Clock.systemDefaultZone();
 		DefaultWebSession existing = new DefaultWebSession("1", clock);
 		existing.start();
-		existing.setLastAccessTime(Instant.now(clock).minus(Duration.ofMinutes(31)));
+		existing.setLastAccessTime(ZonedDateTime.now(clock).minus(Duration.ofMinutes(31)));
 		this.manager.getSessionStore().storeSession(existing);
 		this.idResolver.setIdsToResolve(Collections.singletonList("1"));
 
