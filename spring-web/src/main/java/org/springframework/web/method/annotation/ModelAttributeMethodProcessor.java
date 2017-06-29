@@ -31,6 +31,7 @@ import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+import org.springframework.util.KotlinUtils;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.annotation.Validated;
@@ -154,13 +155,20 @@ public class ModelAttributeMethodProcessor implements HandlerMethodArgumentResol
 	protected Object createAttribute(String attributeName, MethodParameter parameter,
 			WebDataBinderFactory binderFactory, NativeWebRequest webRequest) throws Exception {
 
-		Constructor<?>[] ctors = parameter.getParameterType().getConstructors();
-		if (ctors.length != 1) {
+		Class<?> type = parameter.getParameterType();
+		Constructor<?>[] ctors = type.getConstructors();
+		Constructor<?> ctor;
+
+		if (KotlinUtils.isKotlinClass(type)) {
+			ctor = KotlinUtils.getPrimaryConstructor(type);
+		} else if (ctors.length != 1) {
 			// No standard data class or standard JavaBeans arrangement ->
 			// defensively go with default constructor, expecting regular bean property bindings.
 			return BeanUtils.instantiateClass(parameter.getParameterType());
+		} else {
+			ctor = ctors[0];
 		}
-		Constructor<?> ctor = ctors[0];
+
 		if (ctor.getParameterCount() == 0) {
 			// A single default constructor -> clearly a standard JavaBeans arrangement.
 			return BeanUtils.instantiateClass(ctor);
