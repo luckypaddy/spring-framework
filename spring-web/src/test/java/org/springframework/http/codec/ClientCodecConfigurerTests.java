@@ -94,7 +94,7 @@ public class ClientCodecConfigurerTests {
 	public void jackson2EncoderOverride() throws Exception {
 
 		Jackson2JsonDecoder decoder = new Jackson2JsonDecoder();
-		this.configurer.defaultCodecs().jackson2Decoder(decoder);
+		this.configurer.defaultCodecs().jackson2JsonDecoder(decoder);
 
 		assertSame(decoder, this.configurer.getReaders().stream()
 				.filter(reader -> ServerSentEventHttpMessageReader.class.equals(reader.getClass()))

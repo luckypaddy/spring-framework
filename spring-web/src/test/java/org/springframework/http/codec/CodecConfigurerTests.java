@@ -229,7 +229,7 @@ public class CodecConfigurerTests {
 	public void jackson2DecoderOverride() throws Exception {
 
 		Jackson2JsonDecoder decoder = new Jackson2JsonDecoder();
-		this.configurer.defaultCodecs().jackson2Decoder(decoder);
+		this.configurer.defaultCodecs().jackson2JsonDecoder(decoder);
 
 		assertSame(decoder, this.configurer.getReaders().stream()
 				.filter(writer -> writer instanceof DecoderHttpMessageReader)
@@ -243,7 +243,7 @@ public class CodecConfigurerTests {
 	public void jackson2EncoderOverride() throws Exception {
 
 		Jackson2JsonEncoder encoder = new Jackson2JsonEncoder();
-		this.configurer.defaultCodecs().jackson2Encoder(encoder);
+		this.configurer.defaultCodecs().jackson2JsonEncoder(encoder);
 
 		assertSame(encoder, this.configurer.getWriters().stream()
 				.filter(writer -> writer instanceof EncoderHttpMessageWriter)

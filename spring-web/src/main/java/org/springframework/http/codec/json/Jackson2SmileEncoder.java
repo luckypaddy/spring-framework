@@ -16,41 +16,31 @@
 
 package org.springframework.http.codec.json;
 
-import com.fasterxml.jackson.core.PrettyPrinter;
-import com.fasterxml.jackson.core.util.DefaultIndenter;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.util.Assert;
 import org.springframework.util.MimeType;
 
 /**
- * Encode from an {@code Object} stream to a byte stream of JSON objects,
- * using Jackson 2.9.
+ * Encode from an {@code Object} stream to a byte stream of Smile objects using Jackson 2.9.
  *
  * @author Sebastien Deleuze
- * @author Arjen Poutsma
  * @since 5.0
- * @see Jackson2JsonDecoder
+ * @see Jackson2SmileDecoder
  */
-public class Jackson2JsonEncoder extends AbstractJackson2Encoder {
-
-	public Jackson2JsonEncoder() {
-		this(Jackson2ObjectMapperBuilder.json().build());
-	}
-
-	public Jackson2JsonEncoder(ObjectMapper mapper, MimeType... mimeTypes) {
-		super(mapper, mimeTypes);
-		this.ssePrettyPrinter = initSsePrettyPrinter();
-		this.streamingMediaTypes.add(MediaType.APPLICATION_STREAM_JSON);
-		
-	}
-
-	private static PrettyPrinter initSsePrettyPrinter() {
-		DefaultPrettyPrinter printer = new DefaultPrettyPrinter();
-		printer.indentObjectsWith(new DefaultIndenter("  ", "\ndata:"));
-		return printer;
-	}
+public class Jackson2SmileEncoder extends AbstractJackson2Encoder {
 	
+	public Jackson2SmileEncoder() {
+		this(Jackson2ObjectMapperBuilder.smile().build(), new MediaType("application", "x-jackson-smile"));
+	}
+
+	public Jackson2SmileEncoder(ObjectMapper mapper, MimeType... mimeTypes) {
+		super(mapper, mimeTypes);
+		this.streamingMediaTypes.add(new MediaType("application", "stream+x-jackson-smile"));
+		Assert.isAssignable(SmileFactory.class, mapper.getFactory().getClass());
+	}
+
 }
