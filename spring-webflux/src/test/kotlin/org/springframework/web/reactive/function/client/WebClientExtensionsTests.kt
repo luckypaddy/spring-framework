@@ -25,6 +25,7 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnitRunner
 import org.reactivestreams.Publisher
+import org.springframework.core.ParameterizedTypeReference
 
 /**
  * Mock object based tests for [WebClient] Kotlin extensions
@@ -50,14 +51,14 @@ class WebClientExtensionsTests {
 
 	@Test
 	fun `ResponseSpec#bodyToMono with reified type parameters`() {
-		responseSpec.bodyToMono<Foo>()
-		verify(responseSpec, times(1)).bodyToMono(Foo::class.java)
+		responseSpec.bodyToMono<List<Foo>>()
+		verify(responseSpec, times(1)).bodyToMono(object : ParameterizedTypeReference<List<Foo>>() {})
 	}
 
 	@Test
 	fun `ResponseSpec#bodyToFlux with reified type parameters`() {
-		responseSpec.bodyToFlux<Foo>()
-		verify(responseSpec, times(1)).bodyToFlux(Foo::class.java)
+		responseSpec.bodyToFlux<List<Foo>>()
+		verify(responseSpec, times(1)).bodyToFlux(object : ParameterizedTypeReference<List<Foo>>() {})
 	}
 
 	class Foo

@@ -17,12 +17,26 @@
 package org.springframework.web.reactive.function.server
 
 import org.reactivestreams.Publisher
+import org.springframework.core.ParameterizedTypeReference
+import org.springframework.web.reactive.function.BodyInserters.*
 import reactor.core.publisher.Mono
 
 /**
  * Extension for [ServerResponse.BodyBuilder.body] providing a `body(Publisher<T>)` variant.
+ * TODO Use directly ParameterizedTypeReference variants when SPR-15817 will be fixed
  *
  * @author Sebastien Deleuze
  * @since 5.0
  */
-inline fun <reified T : Any> ServerResponse.BodyBuilder.body(publisher: Publisher<T>): Mono<ServerResponse> = body(publisher, T::class.java)
+inline fun <reified T : Any> ServerResponse.BodyBuilder.body(publisher: Publisher<T>): Mono<ServerResponse> =
+		body(fromPublisher(publisher, object : ParameterizedTypeReference<T>() {}))
+
+/**
+ * Extension for [ServerResponse.BodyBuilder.body] providing a `bodyToServerSentEvents(Publisher<T>)` variant.
+ * TODO Use directly ParameterizedTypeReference variants when SPR-15817 will be fixed
+ *
+ * @author Sebastien Deleuze
+ * @since 5.0
+ */
+inline fun <reified T : Any> ServerResponse.BodyBuilder.bodyToServerSentEvents(publisher: Publisher<T>): Mono<ServerResponse> =
+		body(fromServerSentEvents(publisher, object : ParameterizedTypeReference<T>() {}))

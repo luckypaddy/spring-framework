@@ -16,22 +16,30 @@
 
 package org.springframework.web.reactive.function.server
 
+import org.springframework.core.ParameterizedTypeReference
+import org.springframework.web.reactive.function.BodyExtractors.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 
 /**
- * Extension for [ServerRequest.bodyToMono] providing a `bodyToMono<Foo>()` variant.
- *
+ * Extension for [ServerRequest.bodyToMono] providing a `bodyToMono<Foo>()` variant
+ * leveraging Kotlin reified type parameters.
+ * TODO Use directly ParameterizedTypeReference variants when SPR-15817 will be fixed
+ * 
  * @author Sebastien Deleuze
  * @since 5.0
  */
-inline fun <reified T : Any> ServerRequest.bodyToMono(): Mono<T> = bodyToMono(T::class.java)
+inline fun <reified T : Any> ServerRequest.bodyToMono(): Mono<T> =
+		body(toMono(object : ParameterizedTypeReference<T>() {}))
 
 /**
- * Extension for [ServerRequest.bodyToFlux] providing a `bodyToFlux<Foo>()` variant.
+ * Extension for [ServerRequest.bodyToFlux] providing a `bodyToFlux<Foo>()` variant
+ * leveraging Kotlin reified type parameters.
+ * TODO Use directly ParameterizedTypeReference variants when SPR-15817 will be fixed
  *
  * @author Sebastien Deleuze
  * @since 5.0
  */
-inline fun <reified T : Any> ServerRequest.bodyToFlux(): Flux<T> = bodyToFlux(T::class.java)
+inline fun <reified T : Any> ServerRequest.bodyToFlux(): Flux<T> =
+		body(toFlux(object : ParameterizedTypeReference<T>() {}))
