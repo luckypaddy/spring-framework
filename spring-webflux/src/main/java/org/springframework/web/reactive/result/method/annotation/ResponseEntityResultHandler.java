@@ -133,13 +133,14 @@ public class ResponseEntityResultHandler extends AbstractMessageWriterResultHand
 
 			HttpHeaders entityHeaders = httpEntity.getHeaders();
 			HttpHeaders responseHeaders = exchange.getResponse().getHeaders();
+			Object body = httpEntity.getBody();
 
 			if (!entityHeaders.isEmpty()) {
 				entityHeaders.entrySet().stream()
 						.filter(entry -> !responseHeaders.containsKey(entry.getKey()))
 						.forEach(entry -> responseHeaders.put(entry.getKey(), entry.getValue()));
 			}
-			if(httpEntity.getBody() == null) {
+			if(body == null) {
 				return exchange.getResponse().setComplete();
 			}
 
@@ -150,7 +151,9 @@ public class ResponseEntityResultHandler extends AbstractMessageWriterResultHand
 				return exchange.getResponse().setComplete();
 			}
 
-			return writeBody(httpEntity.getBody(), bodyParameter, exchange);
+			return (body instanceof Mono ?
+					((Mono<?>)body).flatMap(foo -> writeBody(foo, bodyParameter.nested(), exchange)) :
+					writeBody(body, bodyParameter, exchange));
 		});
 	}
 

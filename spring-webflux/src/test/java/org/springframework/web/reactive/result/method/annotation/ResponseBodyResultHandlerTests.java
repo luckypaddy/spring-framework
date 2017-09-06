@@ -17,22 +17,33 @@
 package org.springframework.web.reactive.result.method.annotation;
 
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 import rx.Completable;
 import rx.Single;
 
+import org.springframework.core.MethodParameter;
 import org.springframework.core.codec.ByteBufferEncoder;
 import org.springframework.core.codec.CharSequenceEncoder;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.buffer.support.DataBufferTestUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.EncoderHttpMessageWriter;
 import org.springframework.http.codec.HttpMessageWriter;
 import org.springframework.http.codec.ResourceHttpMessageWriter;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.http.codec.xml.Jaxb2XmlEncoder;
+import org.springframework.mock.http.server.reactive.test.MockServerWebExchange;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -44,7 +55,11 @@ import org.springframework.web.reactive.accept.RequestedContentTypeResolverBuild
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
+import static org.springframework.http.ResponseEntity.ok;
+import static org.springframework.mock.http.server.reactive.test.MockServerHttpRequest.get;
 import static org.springframework.web.method.ResolvableMethod.on;
+import static org.springframework.web.reactive.HandlerMapping.PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE;
 
 /**
  * Unit tests for {@link ResponseBodyResultHandler}.When adding a test also
@@ -106,6 +121,48 @@ public class ResponseBodyResultHandlerTests {
 		testSupports(controller, method);
 	}
 
+	@Test // SPR-15910
+	public void handleWithPublisherWildcardBodyTypeAndResourceBody() throws Exception {
+
+		MockServerWebExchange exchange = get("/path").toExchange();
+		exchange.getAttributes().put(PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE, Collections.singleton(APPLICATION_OCTET_STREAM));
+
+		MethodParameter returnType = on(TestRestController.class).resolveReturnType(Publisher.class);
+		HandlerResult result = new HandlerResult(new TestRestController(), Mono.just(new ByteArrayResource("body".getBytes())), returnType);
+
+		this.resultHandler.handleResult(exchange, result).block(Duration.ofSeconds(5));
+
+		assertResponseBody(exchange, "body");
+	}
+
+	@Test // SPR-15910
+	public void handleWithPublisherObjectBodyTypeAndResourceBody() throws Exception {
+
+		MockServerWebExchange exchange = get("/path").toExchange();
+		exchange.getAttributes().put(PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE, Collections.singleton(APPLICATION_OCTET_STREAM));
+
+		MethodParameter returnType = on(TestRestController.class).resolveReturnType(Publisher.class, Object.class);
+		HandlerResult result = new HandlerResult(new TestRestController(), Mono.just(new ByteArrayResource("body".getBytes())), returnType);
+
+		this.resultHandler.handleResult(exchange, result).block(Duration.ofSeconds(5));
+
+		assertResponseBody(exchange, "body");
+	}
+
+	@Test // SPR-15910
+	public void handleWithObjectBodyTypeAndResourceBody() throws Exception {
+
+		MockServerWebExchange exchange = get("/path").toExchange();
+		exchange.getAttributes().put(PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE, Collections.singleton(APPLICATION_OCTET_STREAM));
+
+		MethodParameter returnType = on(TestRestController.class).resolveReturnType(Object.class);
+		HandlerResult result = new HandlerResult(new TestRestController(), new ByteArrayResource("body".getBytes()), returnType);
+
+		this.resultHandler.handleResult(exchange, result).block(Duration.ofSeconds(5));
+
+		assertResponseBody(exchange, "body");
+	}
+
 	private void testSupports(Object controller, Method method) {
 		HandlerResult handlerResult = getHandlerResult(controller, method);
 		assertTrue(this.resultHandler.supports(handlerResult));
@@ -114,6 +171,14 @@ public class ResponseBodyResultHandlerTests {
 	private HandlerResult getHandlerResult(Object controller, Method method) {
 		HandlerMethod handlerMethod = new HandlerMethod(controller, method);
 		return new HandlerResult(handlerMethod, null, handlerMethod.getReturnType());
+	}
+
+	private void assertResponseBody(MockServerWebExchange exchange, String responseBody) {
+		StepVerifier.create(exchange.getResponse().getBody())
+				.consumeNextWith(buf -> assertEquals(responseBody,
+						DataBufferTestUtils.dumpString(buf, StandardCharsets.UTF_8)))
+				.expectComplete()
+				.verify();
 	}
 
 	@Test
@@ -144,6 +209,12 @@ public class ResponseBodyResultHandlerTests {
 		public Completable handleToCompletable() {
 			return null;
 		}
+
+		public Publisher<?> handleToPublisherWildcard() { return null; }
+
+		public Publisher<Object> handleToPublisherObject() { return null; }
+
+		public Object handleToObject() { return null; }
 	}
 
 

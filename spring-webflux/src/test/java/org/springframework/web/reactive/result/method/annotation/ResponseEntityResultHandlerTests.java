@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -39,6 +40,7 @@ import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.codec.ByteBufferEncoder;
 import org.springframework.core.codec.CharSequenceEncoder;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.buffer.support.DataBufferTestUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -59,6 +61,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.core.ResolvableType.forClassWithGenerics;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM;
 import static org.springframework.http.ResponseEntity.notFound;
 import static org.springframework.http.ResponseEntity.ok;
 import static org.springframework.mock.http.server.reactive.test.MockServerHttpRequest.get;
@@ -322,6 +325,96 @@ public class ResponseEntityResultHandlerTests {
 		assertResponseBodyIsEmpty(exchange);
 	}
 
+	@Test // SPR-15910
+	public void handlePublisherWithWildcardBodyTypeAndResourceBody() throws Exception {
+
+		MockServerWebExchange exchange = get("/path").toExchange();
+		exchange.getAttributes().put(PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE, Collections.singleton(APPLICATION_OCTET_STREAM));
+
+		MethodParameter returnType = on(TestController.class).resolveReturnType(Publisher.class, ResponseEntity.class);
+		HandlerResult result = new HandlerResult(new TestController(), Mono.just(ok().body(new ByteArrayResource("body".getBytes()))), returnType);
+
+		this.resultHandler.handleResult(exchange, result).block(Duration.ofSeconds(5));
+
+		assertEquals(HttpStatus.OK, exchange.getResponse().getStatusCode());
+		assertResponseBody(exchange, "body");
+	}
+
+	@Test // SPR-15910
+	public void handleResponseEntityWithWildcardBodyTypeAndResourceBody() throws Exception {
+
+		MockServerWebExchange exchange = get("/path").toExchange();
+		exchange.getAttributes().put(PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE, Collections.singleton(APPLICATION_OCTET_STREAM));
+
+		MethodParameter returnType = on(TestController.class).resolveReturnType(ResponseEntity.class);
+		HandlerResult result = new HandlerResult(new TestController(), Mono.just(ok().body(new ByteArrayResource("body".getBytes()))), returnType);
+
+		this.resultHandler.handleResult(exchange, result).block(Duration.ofSeconds(5));
+
+		assertEquals(HttpStatus.OK, exchange.getResponse().getStatusCode());
+		assertResponseBody(exchange, "body");
+	}
+
+	@Test // SPR-15910
+	public void handlePublisherWithObjectBodyTypeAndResourceBody() throws Exception {
+
+		MockServerWebExchange exchange = get("/path").toExchange();
+		exchange.getAttributes().put(PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE, Collections.singleton(APPLICATION_OCTET_STREAM));
+
+		MethodParameter returnType = on(TestController.class).resolveReturnType(Publisher.class, ResolvableType.forClassWithGenerics(ResponseEntity.class, Object.class));
+		HandlerResult result = new HandlerResult(new TestController(), Mono.just(ok().body(new ByteArrayResource("body".getBytes()))), returnType);
+
+		this.resultHandler.handleResult(exchange, result).block(Duration.ofSeconds(5));
+
+		assertEquals(HttpStatus.OK, exchange.getResponse().getStatusCode());
+		assertResponseBody(exchange, "body");
+	}
+
+	@Test // SPR-15910
+	public void handleResponseEntityWithObjectBodyTypeAndResourceBody() throws Exception {
+
+		MockServerWebExchange exchange = get("/path").toExchange();
+		exchange.getAttributes().put(PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE, Collections.singleton(APPLICATION_OCTET_STREAM));
+
+		MethodParameter returnType = on(TestController.class).resolveReturnType(ResponseEntity.class, Object.class);
+		HandlerResult result = new HandlerResult(new TestController(), ok().body(new ByteArrayResource("body".getBytes())), returnType);
+
+		this.resultHandler.handleResult(exchange, result).block(Duration.ofSeconds(5));
+
+		assertEquals(HttpStatus.OK, exchange.getResponse().getStatusCode());
+		assertResponseBody(exchange, "body");
+	}
+
+	@Test // SPR-15910
+	public void handleResponseEntityWithPublisherObjectBodyTypeAndResourceBody() throws Exception {
+
+		MockServerWebExchange exchange = get("/path").toExchange();
+		exchange.getAttributes().put(PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE, Collections.singleton(APPLICATION_OCTET_STREAM));
+
+		MethodParameter returnType = on(TestController.class).resolveReturnType(ResponseEntity.class, ResolvableType.forClassWithGenerics(Publisher.class, Object.class));
+		HandlerResult result = new HandlerResult(new TestController(), ok().body(Mono.just(new ByteArrayResource("body".getBytes()))), returnType);
+
+		this.resultHandler.handleResult(exchange, result).block(Duration.ofSeconds(5));
+
+		assertEquals(HttpStatus.OK, exchange.getResponse().getStatusCode());
+		assertResponseBody(exchange, "body");
+	}
+
+	@Test // SPR-15910
+	public void handleResponseEntityWithMonoObjectBodyTypeAndResourceBody() throws Exception {
+
+		MockServerWebExchange exchange = get("/path").toExchange();
+		exchange.getAttributes().put(PRODUCIBLE_MEDIA_TYPES_ATTRIBUTE, Collections.singleton(APPLICATION_OCTET_STREAM));
+
+		MethodParameter returnType = on(TestController.class).resolveReturnType(ResponseEntity.class, Mono.class);
+		HandlerResult result = new HandlerResult(new TestController(), ok().body(Mono.just(new ByteArrayResource("body".getBytes()))), returnType);
+
+		this.resultHandler.handleResult(exchange, result).block(Duration.ofSeconds(5));
+
+		assertEquals(HttpStatus.OK, exchange.getResponse().getStatusCode());
+		assertResponseBody(exchange, "body");
+	}
+
 
 	private void testHandle(Object returnValue, MethodParameter returnType) {
 
@@ -397,6 +490,19 @@ public class ResponseEntityResultHandlerTests {
 		Flux<?> fluxWildcard() { return null; }
 
 		Object object() { return null; }
+
+		Publisher<ResponseEntity<?>> publisherResponseEntityWildcard() { return null; }
+
+		Publisher<ResponseEntity<Object>> publisherResponseEntityObject() { return null; }
+
+		ResponseEntity<?> ResponseEntityWildcard() { return null; }
+
+		ResponseEntity<Object> ResponseEntityObject() { return null; }
+
+		ResponseEntity<Publisher<Object>> ResponseEntityPublisherObject() { return null; }
+
+		ResponseEntity<Mono<?>> ResponseEntityMonoWildcardWithResourceBody() { return null; }
+
 
 	}
 

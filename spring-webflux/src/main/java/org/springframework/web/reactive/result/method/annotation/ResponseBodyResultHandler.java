@@ -21,6 +21,7 @@ import java.util.List;
 import reactor.core.publisher.Mono;
 
 import org.springframework.core.MethodParameter;
+import org.springframework.core.ReactiveAdapter;
 import org.springframework.core.ReactiveAdapterRegistry;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.codec.HttpMessageWriter;
@@ -84,8 +85,14 @@ public class ResponseBodyResultHandler extends AbstractMessageWriterResultHandle
 	@Override
 	public Mono<Void> handleResult(ServerWebExchange exchange, HandlerResult result) {
 		Object body = result.getReturnValue();
-		MethodParameter bodyTypeParameter = result.getReturnTypeSource();
-		return writeBody(body, bodyTypeParameter, exchange);
+		ReactiveAdapter adapter = getAdapter(result);
+		if (adapter != null && !adapter.isNoValue() && !adapter.isMultiValue()) {
+			Mono<?> returnValueMono  = Mono.from(adapter.toPublisher(result.getReturnValue()));
+			return returnValueMono.flatMap(returnValue -> writeBody(returnValue, result.getReturnTypeSource().nested(), exchange));
+		}
+		else {
+			return writeBody(body, result.getReturnTypeSource(), exchange);
+		}
 	}
 
 }
