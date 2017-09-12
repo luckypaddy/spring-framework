@@ -21,17 +21,17 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
 import javax.annotation.Nonnull;
 import javax.annotation.meta.TypeQualifierNickname;
-import javax.annotation.meta.When;
 
 /**
  * A common Spring annotation to declare that the annotated parameter,
- * return value or field could be {@code null} under some circumstances.
+ * return value or field can not be {@code null}.
  *
- * <p><p>Should be used at generic type argument level, and at parameters, return values and optionally
- * field level in association with {@link NonNullApi} package-level annotations.
- * Methods overrides should repeat parent parameter or return value {@code @Nullable}
+ * <p>Should be used at generic type argument level, and at parameters, return values, and
+ * optionally field level in association with {@link NonNullApi} package-level annotations.
+ * Methods overrides should repeat parent parameter or return value {@code @NonNull}
  * annotations unless they behave differently.
  *
  * <p>Leverages JSR-305 meta-annotations to indicate its semantics to
@@ -41,12 +41,12 @@ import javax.annotation.meta.When;
  * @author Juergen Hoeller
  * @since 5.0
  * @see NonNullApi
- * @see NonNull
+ * @see Nullable
  */
 @Target({ElementType.METHOD, ElementType.PARAMETER, ElementType.TYPE_USE, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Nonnull(when = When.MAYBE)
+@Nonnull
 @TypeQualifierNickname
-public @interface Nullable {
+public @interface NonNull {
 }

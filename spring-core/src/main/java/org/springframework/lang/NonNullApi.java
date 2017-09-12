@@ -32,6 +32,11 @@ import javax.annotation.meta.TypeQualifierDefault;
  * <p>Should be used at package level in association with {@link Nullable}
  * annotations at parameter and return value level.
  *
+ * <p>This annotation does not define nullability of generic type arguments, because
+ * {@code @TypeQualifierDefault(ElementType.TYPE_USE)} scope would be too broad.
+ * As a consequence, each API generic type argument should be annotated
+ * with {@link Nullable} or {@link NonNull} to specify their nullability.
+ *
  * <p>Leverages JSR-305 meta-annotations to indicate its semantics to
  * common tools with JSR-305 support.
  *
@@ -39,12 +44,12 @@ import javax.annotation.meta.TypeQualifierDefault;
  * @author Juergen Hoeller
  * @since 5.0
  * @see Nullable
- * @see javax.annotation.Nonnull
+ * @see NonNull
  */
 @Target(ElementType.PACKAGE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Nonnull
-@TypeQualifierDefault({ElementType.METHOD, ElementType.PARAMETER, ElementType.TYPE_PARAMETER, ElementType.FIELD})
+@TypeQualifierDefault({ElementType.METHOD, ElementType.PARAMETER})
 public @interface NonNullApi {
 }

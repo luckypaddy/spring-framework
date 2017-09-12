@@ -85,12 +85,16 @@ http://www.baeldung.com/kotlin-null-safety[comprehensive guide to Kotlin null-sa
 
 Although Java does not allow to express null-safety in its type-system, Spring Framework now
 provides https://jira.spring.io/browse/SPR-15540[null-safety of the whole Spring Framework API]
-via tooling-friendly annotations:
+via tooling-friendly annotations declared in the `org.springframework.lang` package:
 
- * `@NonNullApi` annotations at package level declare non-null as the default behavior
- * `@Nullable` annotations where specific parameters or return values can be `null`.
+ * `@NonNullApi` annotation at package level declares non-null as the default behavior for
+ parameters and return values (generic type arguments still need to be specified explicitly)
+ * `@NonNull` annotation where specific parameter, return value, generic type argument or
+ field cannot be `null` (not needed on parameter and return value where `@NonNullApi` applies) .
+ * `@Nullable` annotations where specific parameter, return value, generic type argument
+ or field can be `null`.
 
-Both annotations are meta-annotated with https://jcp.org/en/jsr/detail?id=305[JSR 305]
+These annotations are meta-annotated with https://jcp.org/en/jsr/detail?id=305[JSR 305]
 meta-annotations (a dormant JSR but supported by tools like IDEA, Findbugs, etc.)
 to provide useful warnings to Java developers.
 
