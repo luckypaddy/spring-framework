@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -186,7 +187,11 @@ class DefaultRenderingResponseBuilder implements RenderingResponse.Builder {
 					.next()
 					.switchIfEmpty(Mono.error(new IllegalArgumentException("Could not resolve view with name '" +
 							name() +"'")))
-					.flatMap(view -> view.render(model(), contentType, exchange));
+					.flatMap(view -> {
+						List<MediaType> mediaTypes = view.getSupportedMediaTypes();
+						return view.render(model(), contentType == null && !mediaTypes.isEmpty() ?
+								mediaTypes.get(0) : contentType, exchange);
+					});
 		}
 
 	}
