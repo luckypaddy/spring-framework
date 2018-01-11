@@ -20,6 +20,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.springframework.beans.factory.NoSuchBeanDefinitionException
 import org.springframework.beans.factory.getBean
+import org.springframework.beans.factory.getBeansOfType
 import org.springframework.context.support.BeanDefinitionDsl.*
 import org.springframework.core.env.SimpleCommandLinePropertySource
 import org.springframework.core.env.get
@@ -34,6 +35,7 @@ class BeanDefinitionDslTests {
 			bean<Bar>("bar", scope = Scope.PROTOTYPE)
 			bean { Baz(ref()) }
 			bean { Baz(ref("bar")) }
+			bean { Bazzz(context.getBeansOfType<Bar>().values) }
 		}
 
 		val context = GenericApplicationContext().apply {
@@ -109,4 +111,5 @@ class BeanDefinitionDslTests {
 class Foo
 class Bar
 class Baz(val bar: Bar)
+class Bazzz(@Suppress("unused") val bars: Collection<Bar>)
 class FooFoo(val name: String)

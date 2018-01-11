@@ -131,12 +131,12 @@ open class BeanDefinitionDsl(private val condition: (ConfigurableEnvironment) ->
 	}
 
 	/**
-	 * Provide read access to some application context facilities.
+	 * Provide access to application context facilities.
 	 * @constructor Create a new bean definition context.
 	 * @param context the `ApplicationContext` instance to use for retrieving bean
 	 * references, `Environment`, etc.
 	 */
-	inner class BeanDefinitionContext(@PublishedApi internal val context: GenericApplicationContext) {
+	inner class BeanDefinitionContext(val context: GenericApplicationContext) {
 
 		/**
 		 * Get a reference to the bean by type or type + name with the syntax
