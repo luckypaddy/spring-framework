@@ -76,9 +76,4 @@ public class Jackson2JsonEncoder extends AbstractJackson2Encoder {
 				writer.with(this.ssePrettyPrinter) : writer);
 	}
 
-	@Override
-	public List<MimeType> getEncodableMimeTypes() {
-		return getMimeTypes();
-	}
-
 }

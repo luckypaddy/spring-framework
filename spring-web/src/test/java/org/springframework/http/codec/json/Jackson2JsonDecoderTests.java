@@ -52,6 +52,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.core.ResolvableType.forClass;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
+import static org.springframework.http.MediaType.APPLICATION_STREAM_JSON;
 import static org.springframework.http.MediaType.APPLICATION_XML;
 import static org.springframework.http.codec.json.Jackson2JsonDecoder.JSON_VIEW_HINT;
 import static org.springframework.http.codec.json.JacksonViewBean.MyJacksonView1;
@@ -70,6 +72,8 @@ public class Jackson2JsonDecoderTests extends AbstractDataBufferAllocatingTestCa
 		Jackson2JsonDecoder decoder = new Jackson2JsonDecoder();
 
 		assertTrue(decoder.canDecode(forClass(Pojo.class), APPLICATION_JSON));
+		assertTrue(decoder.canDecode(forClass(Pojo.class), APPLICATION_JSON_UTF8));
+		assertTrue(decoder.canDecode(forClass(Pojo.class), APPLICATION_STREAM_JSON));
 		assertTrue(decoder.canDecode(forClass(Pojo.class), null));
 
 		assertFalse(decoder.canDecode(forClass(String.class), null));
@@ -130,12 +134,27 @@ public class Jackson2JsonDecoderTests extends AbstractDataBufferAllocatingTestCa
 	}
 
 	@Test
-	public void decodeToFlux() throws Exception {
+	public void decodeArrayToFlux() throws Exception {
 		Flux<DataBuffer> source = Flux.just(stringBuffer(
 				"[{\"bar\":\"b1\",\"foo\":\"f1\"},{\"bar\":\"b2\",\"foo\":\"f2\"}]"));
 
 		ResolvableType elementType = forClass(Pojo.class);
 		Flux<Object> flux = new Jackson2JsonDecoder().decode(source, elementType, null,
+				emptyMap());
+
+		StepVerifier.create(flux)
+				.expectNext(new Pojo("f1", "b1"))
+				.expectNext(new Pojo("f2", "b2"))
+				.verifyComplete();
+	}
+
+	@Test
+	public void decodeStreamToFlux() throws Exception {
+		Flux<DataBuffer> source = Flux.just(stringBuffer("{\"bar\":\"b1\",\"foo\":\"f1\"}"),
+				stringBuffer("{\"bar\":\"b2\",\"foo\":\"f2\"}"));
+
+		ResolvableType elementType = forClass(Pojo.class);
+		Flux<Object> flux = new Jackson2JsonDecoder().decode(source, elementType, APPLICATION_STREAM_JSON,
 				emptyMap());
 
 		StepVerifier.create(flux)

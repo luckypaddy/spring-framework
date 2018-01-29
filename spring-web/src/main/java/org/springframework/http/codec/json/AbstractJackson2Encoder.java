@@ -28,6 +28,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -59,6 +60,8 @@ import org.springframework.util.MimeType;
 public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport implements HttpMessageEncoder<Object> {
 
 	protected final List<MediaType> streamingMediaTypes = new ArrayList<>(1);
+
+	protected boolean streamingLineSeparator = true;
 
 
 	/**
@@ -104,7 +107,9 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 		else if (this.streamingMediaTypes.stream().anyMatch(mediaType -> mediaType.isCompatibleWith(mimeType))) {
 			return Flux.from(inputStream).map(value -> {
 				DataBuffer buffer = encodeValue(value, mimeType, bufferFactory, elementType, hints);
-				buffer.write(new byte[]{'\n'});
+				if (streamingLineSeparator && !getObjectMapper().getSerializationConfig().isEnabled(SerializationFeature.INDENT_OUTPUT)) {
+					buffer.write(new byte[]{'\n'});
+				}
 				return buffer;
 			});
 		}
@@ -157,6 +162,11 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 	// HttpMessageEncoder...
 
 	@Override
+	public List<MimeType> getEncodableMimeTypes() {
+		return getMimeTypes();
+	}
+
+	@Override
 	public List<MediaType> getStreamingMediaTypes() {
 		return Collections.unmodifiableList(this.streamingMediaTypes);
 	}
@@ -167,6 +177,8 @@ public abstract class AbstractJackson2Encoder extends Jackson2CodecSupport imple
 
 		return (actualType != null ? getHints(actualType) : Collections.emptyMap());
 	}
+
+	// Jackson2CodecSupport ...
 
 	@Override
 	protected <A extends Annotation> A getAnnotation(MethodParameter parameter, Class<A> annotType) {
