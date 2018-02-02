@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.apache.commons.logging.LogFactory;
 import reactor.core.publisher.Mono;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebExceptionHandler;
@@ -42,7 +43,18 @@ public class ResponseStatusExceptionHandler implements WebExceptionHandler {
 		if (ex instanceof ResponseStatusException) {
 			HttpStatus status = ((ResponseStatusException) ex).getStatus();
 			if (exchange.getResponse().setStatusCode(status)) {
-				logger.trace(ex.getMessage());
+				ServerHttpRequest request = exchange.getRequest();
+				String message = "Failed to handle request [" + request.getMethod() + " "
+						+ request.getURI() + "]: " + ex.getMessage();
+				if (status.is5xxServerError()) {
+					logger.error(message);
+				}
+				else if (status == HttpStatus.BAD_REQUEST) {
+					logger.warn(message);
+				}
+				else {
+					logger.trace(message);
+				}
 				return exchange.getResponse().setComplete();
 			}
 		}
