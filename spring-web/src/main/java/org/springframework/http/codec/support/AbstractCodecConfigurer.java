@@ -37,11 +37,13 @@ import org.springframework.http.codec.DecoderHttpMessageReader;
 import org.springframework.http.codec.EncoderHttpMessageWriter;
 import org.springframework.http.codec.HttpMessageReader;
 import org.springframework.http.codec.HttpMessageWriter;
+import org.springframework.http.codec.protobuf.ProtobufHttpMessageWriter;
 import org.springframework.http.codec.ResourceHttpMessageWriter;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.http.codec.json.Jackson2SmileDecoder;
 import org.springframework.http.codec.json.Jackson2SmileEncoder;
+import org.springframework.http.codec.protobuf.ProtobufDecoder;
 import org.springframework.http.codec.xml.Jaxb2XmlDecoder;
 import org.springframework.http.codec.xml.Jaxb2XmlEncoder;
 import org.springframework.lang.Nullable;
@@ -68,6 +70,9 @@ abstract class AbstractCodecConfigurer implements CodecConfigurer {
 
 	private static final boolean jaxb2Present =
 			ClassUtils.isPresent("javax.xml.bind.Binder", AbstractCodecConfigurer.class.getClassLoader());
+
+	private static final boolean protobufPresent =
+			ClassUtils.isPresent("com.google.protobuf.Message", AbstractCodecConfigurer.class.getClassLoader());
 
 
 	private final AbstractDefaultCodecs defaultCodecs;
@@ -189,6 +194,9 @@ abstract class AbstractCodecConfigurer implements CodecConfigurer {
 			result.add(new DecoderHttpMessageReader<>(new DataBufferDecoder()));
 			result.add(new DecoderHttpMessageReader<>(new ResourceDecoder()));
 			result.add(new DecoderHttpMessageReader<>(StringDecoder.textPlainOnly()));
+			if (protobufPresent) {
+				result.add(new DecoderHttpMessageReader<>(new ProtobufDecoder()));
+			}
 			return result;
 		}
 
@@ -230,6 +238,9 @@ abstract class AbstractCodecConfigurer implements CodecConfigurer {
 			result.add(new EncoderHttpMessageWriter<>(new DataBufferEncoder()));
 			result.add(new ResourceHttpMessageWriter());
 			result.add(new EncoderHttpMessageWriter<>(CharSequenceEncoder.textPlainOnly()));
+			if (protobufPresent) {
+				result.add(new ProtobufHttpMessageWriter());
+			}
 			return result;
 		}
 
