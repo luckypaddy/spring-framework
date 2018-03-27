@@ -14,6 +14,10 @@ dependencyManagement {
 	applyMavenExclusions = false
 }
 
+configurations {
+	patchModule
+}
+
 dependencies {
 	compile(project(":spring-beans"))
 	compile(project(":spring-core"))
@@ -86,4 +90,22 @@ dependencies {
 	testRuntime("com.sun.xml.bind:jaxb-impl:2.3.0")
 	testRuntime("javax.json:javax.json-api:1.1.2")
 	testRuntime("org.apache.johnzon:johnzon-jsonb:1.1.7")
+	patchModule("com.google.code.findbugs:jsr305:3.0.2")
+	patchModule("javax.annotation:javax.annotation-api:1.3.2")
+}
+
+compileJava {
+	// TODO How to compile only a subset of classes to Java 10/11?
+	sourceCompatibility = 10
+	targetCompatibility = 10
+	// TODO Due to the use of incubating feature which generates a warning, won't be needed with JDK 11
+	options.compilerArgs.remove("-Werror")
+	// TODO Compile error in IDEA wth message "Error:java: exporting a package from system module java.xml.ws.annotation is not allowed with --release", see See https://bugs.openjdk.java.net/browse/JDK-8178152. Is there a way to avoid "--release" javac parameter in IDEA?
+	options.compilerArgs += ["--add-modules", "jdk.incubator.httpclient",
+							 "--add-modules", "java.xml.ws",
+							 "--add-modules", "java.xml.ws.annotation",
+							 // We need to provide absolute path to the jsr305 and annotation-api JARs
+							 "--patch-module", "java.xml.ws.annotation=${configurations.patchModule.asPath}",
+							 // Sub-packages are not exported by default
+							  "--add-exports", "java.xml.ws.annotation/javax.annotation.meta=ALL-UNNAMED"]
 }
