@@ -67,6 +67,7 @@ import com.fasterxml.jackson.databind.ser.std.NumberSerializer;
 import com.fasterxml.jackson.databind.type.SimpleType;
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+import com.fasterxml.jackson.dataformat.xml.XmlFactory;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import kotlin.ranges.IntRange;
 import org.joda.time.DateTime;
@@ -460,6 +461,14 @@ public class Jackson2ObjectMapperBuilderTests {
 		assertEquals(XmlMapper.class, objectMapper.getClass());
 	}
 
+	@Test  // gh-22428
+	public void xmlMapperAndCustomFactory() {
+		ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.xml().factory(new MyXmlFactory()).build();
+		assertNotNull(objectMapper);
+		assertEquals(XmlMapper.class, objectMapper.getClass());
+		assertEquals(MyXmlFactory.class, objectMapper.getFactory().getClass());
+	}
+
 	@Test
 	public void createXmlMapper() {
 		Jackson2ObjectMapperBuilder builder = Jackson2ObjectMapperBuilder.json().indentOutput(true);
@@ -611,6 +620,9 @@ public class Jackson2ObjectMapperBuilderTests {
 			return null;
 		}
 
+	}
+
+	public static class MyXmlFactory extends XmlFactory {
 	}
 
 }
