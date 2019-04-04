@@ -19,6 +19,8 @@ package org.springframework.web.reactive.function.server
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -48,7 +50,7 @@ class ServerResponseExtensionsTests {
 	fun `BodyBuilder#bodyToServerSentEvents with Publisher and reified type parameters`() {
 		val body = mockk<Publisher<List<Foo>>>()
 		bodyBuilder.bodyToServerSentEvents(body)
-		verify { bodyBuilder.contentType(TEXT_EVENT_STREAM) }
+		verify { bodyBuilder.contentType(TEXT_EVENT_STREAM).body(ofType<Publisher<List<Foo>>>(), object : ParameterizedTypeReference<List<Foo>>() {}) }
 	}
 
 	@Test
@@ -90,6 +92,26 @@ class ServerResponseExtensionsTests {
 		verify {
 			bodyBuilder.syncBody(ofType<String>())
 		}
+	}
+
+	@Test
+	@FlowPreview
+	fun `BodyBuilder#body with Flow and reified type parameters`() {
+		val body = mockk<Flow<List<Foo>>>()
+		runBlocking {
+			bodyBuilder.bodyAndAwait(body)
+		}
+		verify { bodyBuilder.body(ofType<Publisher<List<Foo>>>(), object : ParameterizedTypeReference<List<Foo>>() {}) }
+	}
+
+	@Test
+	@FlowPreview
+	fun `BodyBuilder#bodyToServerSentEvents with Flow and reified type parameters`() {
+		val body = mockk<Flow<List<Foo>>>()
+		runBlocking {
+			bodyBuilder.bodyToServerSentEventsAndAwait(body)
+		}
+		verify { bodyBuilder.contentType(TEXT_EVENT_STREAM).body(ofType<Publisher<List<Foo>>>(), object : ParameterizedTypeReference<List<Foo>>() {}) }
 	}
 
 	@Test
