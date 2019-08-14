@@ -28,9 +28,6 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import kotlinx.coroutines.CompletableDeferredKt;
 import kotlinx.coroutines.Deferred;
-import kotlinx.coroutines.flow.FlowKt;
-import kotlinx.coroutines.reactive.flow.FlowAsPublisherKt;
-import kotlinx.coroutines.reactive.flow.PublisherAsFlowKt;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -351,9 +348,9 @@ public class ReactiveAdapterRegistry {
 					source -> CoroutinesUtils.monoToDeferred(Mono.from(source)));
 
 			registry.registerReactiveType(
-					ReactiveTypeDescriptor.multiValue(kotlinx.coroutines.flow.Flow.class, FlowKt::emptyFlow),
-					source -> FlowAsPublisherKt.from((kotlinx.coroutines.flow.Flow<?>) source),
-					PublisherAsFlowKt::from
+					ReactiveTypeDescriptor.multiValue(kotlinx.coroutines.flow.Flow.class, kotlinx.coroutines.flow.FlowKt::emptyFlow),
+					source -> kotlinx.coroutines.reactor.FlowKt.asFlux((kotlinx.coroutines.flow.Flow<?>) source),
+					kotlinx.coroutines.reactive.FlowKt::asFlow
 			);
 		}
 	}
