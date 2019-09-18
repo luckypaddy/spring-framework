@@ -135,24 +135,24 @@ final class DefaultRSocketRequester implements RSocketRequester {
 		}
 
 		@Override
-		public RequestSpec metadata(Consumer<RequestSpec> configurer) {
+		public RequestSpec metadata(Consumer<MetadataSpec<?>> configurer) {
 			configurer.accept(this);
 			return this;
 		}
 
 		@Override
-		public ResponseSpec data(Object data) {
+		public InteractionSpec data(Object data) {
 			Assert.notNull(data, "'data' must not be null");
-			return toResponseSpec(data, ResolvableType.NONE);
+			return toInteractionSpec(data, ResolvableType.NONE);
 		}
 
 		@Override
-		public ResponseSpec data(Object producer, Class<?> elementClass) {
+		public InteractionSpec data(Object producer, Class<?> elementClass) {
 			Assert.notNull(producer, "'producer' must not be null");
 			Assert.notNull(elementClass, "'elementClass' must not be null");
 			ReactiveAdapter adapter = getAdapter(producer.getClass());
 			Assert.notNull(adapter, "'producer' type is unknown to ReactiveAdapterRegistry");
-			return toResponseSpec(adapter.toPublisher(producer), ResolvableType.forClass(elementClass));
+			return toInteractionSpec(adapter.toPublisher(producer), ResolvableType.forClass(elementClass));
 		}
 
 		@Nullable
@@ -161,15 +161,15 @@ final class DefaultRSocketRequester implements RSocketRequester {
 		}
 
 		@Override
-		public ResponseSpec data(Object producer, ParameterizedTypeReference<?> elementTypeRef) {
+		public InteractionSpec data(Object producer, ParameterizedTypeReference<?> elementTypeRef) {
 			Assert.notNull(producer, "'producer' must not be null");
 			Assert.notNull(elementTypeRef, "'elementTypeRef' must not be null");
 			ReactiveAdapter adapter = getAdapter(producer.getClass());
 			Assert.notNull(adapter, "'producer' type is unknown to ReactiveAdapterRegistry");
-			return toResponseSpec(adapter.toPublisher(producer), ResolvableType.forType(elementTypeRef));
+			return toInteractionSpec(adapter.toPublisher(producer), ResolvableType.forType(elementTypeRef));
 		}
 
-		private ResponseSpec toResponseSpec(Object input, ResolvableType elementType) {
+		private InteractionSpec toInteractionSpec(Object input, ResolvableType elementType) {
 			ReactiveAdapter adapter = getAdapter(input.getClass());
 			Publisher<?> publisher;
 			if (input instanceof Publisher) {
@@ -184,12 +184,12 @@ final class DefaultRSocketRequester implements RSocketRequester {
 						.map(this::firstPayload)
 						.doOnDiscard(Payload.class, Payload::release)
 						.switchIfEmpty(emptyPayload());
-				return new DefaultResponseSpec(payloadMono);
+				return new DefaultInteractionSpec(payloadMono);
 			}
 
 			if (isVoid(elementType) || (adapter != null && adapter.isNoValue())) {
 				Mono<Payload> payloadMono = Mono.when(publisher).then(emptyPayload());
-				return new DefaultResponseSpec(payloadMono);
+				return new DefaultInteractionSpec(payloadMono);
 			}
 
 			Encoder<?> encoder = elementType != ResolvableType.NONE && !Object.class.equals(elementType.resolve()) ?
@@ -200,7 +200,7 @@ final class DefaultRSocketRequester implements RSocketRequester {
 						.map(value -> encodeData(value, elementType, encoder))
 						.map(this::firstPayload)
 						.switchIfEmpty(emptyPayload());
-				return new DefaultResponseSpec(payloadMono);
+				return new DefaultInteractionSpec(payloadMono);
 			}
 
 			Flux<Payload> payloadFlux = Flux.from(publisher)
@@ -217,7 +217,7 @@ final class DefaultRSocketRequester implements RSocketRequester {
 					})
 					.doOnDiscard(Payload.class, Payload::release)
 					.switchIfEmpty(emptyPayload());
-			return new DefaultResponseSpec(payloadFlux);
+			return new DefaultInteractionSpec(payloadFlux);
 		}
 
 		@SuppressWarnings("unchecked")
@@ -245,10 +245,34 @@ final class DefaultRSocketRequester implements RSocketRequester {
 		private Mono<Payload> emptyPayload() {
 			return Mono.fromCallable(() -> firstPayload(emptyDataBuffer));
 		}
+
+		@Override
+		public Mono<Void> send() {
+			return data(Mono.empty()).send();
+		}
+
+		@Override
+		public <T> Mono<T> retrieveMono(Class<T> dataType) {
+			return data(Mono.empty()).retrieveMono(dataType);
+		}
+
+		@Override
+		public <T> Mono<T> retrieveMono(ParameterizedTypeReference<T> dataTypeRef) {
+			return data(Mono.empty()).retrieveMono(dataTypeRef);
+		}
+
+		@Override
+		public <T> Flux<T> retrieveFlux(Class<T> dataType) {
+			return data(Mono.empty()).retrieveFlux(dataType);
+		}
+
+		@Override
+		public <T> Flux<T> retrieveFlux(ParameterizedTypeReference<T> dataTypeRef) {
+			return data(Mono.empty()).retrieveFlux(dataTypeRef);
+		}
 	}
 
-
-	private class DefaultResponseSpec implements ResponseSpec {
+	private class DefaultInteractionSpec implements InteractionSpec {
 
 		@Nullable
 		private final Mono<Payload> payloadMono;
@@ -256,12 +280,12 @@ final class DefaultRSocketRequester implements RSocketRequester {
 		@Nullable
 		private final Flux<Payload> payloadFlux;
 
-		DefaultResponseSpec(Mono<Payload> payloadMono) {
+		DefaultInteractionSpec(Mono<Payload> payloadMono) {
 			this.payloadMono = payloadMono;
 			this.payloadFlux = null;
 		}
 
-		DefaultResponseSpec(Flux<Payload> payloadFlux) {
+		DefaultInteractionSpec(Flux<Payload> payloadFlux) {
 			this.payloadMono = null;
 			this.payloadFlux = payloadFlux;
 		}
